@@ -264,6 +264,29 @@
             background: #e8e8e8;
         }
 
+        .footer {
+            text-align: center;
+            padding: 30px 0 20px 0;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 40px;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        .footer a:hover {
+            opacity: 0.8;
+        }
+
+        .footer p {
+            margin: 4px 0;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 15px;
@@ -369,6 +392,12 @@
         <div class="history-section" id="history-section" style="display: none;">
             <h3>📜 Histórico Recente</h3>
             <ul class="history-list" id="history-list"></ul>
+        </div>
+
+        <div class="footer">
+            <p>🎴 <strong>MTG Token Printer</strong> • Implementação por <a href="https://github.com/lucianowxc" target="_blank">Luciano Cejnog</a></p>
+            <p>Powered by <a href="https://scryfall.com" target="_blank">Scryfall</a>, <a href="https://www.thermerapp.com/" target="_blank">Thermer</a> & <a href="https://knup.com.br/produto/kp-1025/" target="_blank">KNup KP-1025</a></p>
+            <p style="margin-top: 8px; opacity: 0.6;"><a href="https://github.com/lucianowxc/mtg_token_printer" target="_blank">View on GitHub</a> • Licensed under MIT</p>
         </div>
     </div>
 
