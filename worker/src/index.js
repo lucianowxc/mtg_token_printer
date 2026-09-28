@@ -57,6 +57,7 @@ async function fetchCardData(searchName) {
     mana_cost: data.mana_cost || null,
     mana_value: data.cmc !== undefined ? Math.trunc(data.cmc) : null,
     scryfall_uri: data.scryfall_uri || null,
+    image_uris: data.image_uris || null,
   };
 
   if (data.power && data.toughness) {
@@ -181,6 +182,93 @@ function generateThermerJson(card) {
   return output;
 }
 
+// Generate Thermer JSON with card image included as first entry
+function generateThermerJsonWithImage(card) {
+  const output = [];
+  const divider = (char) => char.repeat(32);
+  const name = toAscii(card.name);
+  const typeLine = toAscii(card.type_line);
+  const manaCost = toAscii(card.mana_cost);
+  const rulesText = toAscii(card.rules_text);
+  const flavorText = toAscii(card.flavor_text);
+  const pt = toAscii(card.pt);
+
+  // Entry 1: Image (if available)
+  if (card.image_uris?.normal) {
+    output.push({
+      type: 1,
+      path: card.image_uris.normal,
+      align: 1,
+    });
+  }
+
+  // Entry 2: header block (name, mana, type)
+  const headerLines = [divider("="), `NAME: ${name.toUpperCase()}`];
+
+  if (manaCost || card.mana_value !== null) {
+    const costString = manaCost
+      ? `${manaCost} (MV: ${card.mana_value ?? 0})`
+      : `MV: ${card.mana_value ?? 0}`;
+    headerLines.push(`MANA: ${costString}`);
+  }
+
+  headerLines.push(`TYPE: ${typeLine}`, divider("-"));
+
+  output.push({
+    type: 0,
+    content: headerLines.join("<br />"),
+    bold: 1,
+    align: 0,
+    format: 0,
+  });
+
+  // Entry 3: QR code (optional)
+  if (card.scryfall_uri) {
+    output.push({
+      type: 3, // QR code
+      value: card.scryfall_uri,
+      size: DEFAULT_QR_SIZE_MM,
+      align: 2,
+    });
+  }
+
+  // Entry 4: rules text + flavor text combined
+  const bodyLines = [];
+  if (rulesText) {
+    bodyLines.push(rulesText);
+  }
+  if (flavorText) {
+    if (bodyLines.length) bodyLines.push(divider("-"));
+    bodyLines.push(flavorText);
+  }
+  if (bodyLines.length) {
+    output.push({
+      type: 0,
+      content: bodyLines.join("<br />"),
+      bold: 0,
+      align: 0,
+      format: 0,
+    });
+  }
+
+  // Entry 5: footer (P/T + closing divider + feed)
+  const footerLines = [divider("-")];
+  if (pt) {
+    footerLines.push(`[${pt}]`);
+  }
+  footerLines.push(divider("="), " ", " ");
+
+  output.push({
+    type: 0,
+    content: footerLines.join("<br />"),
+    bold: 1,
+    align: card.pt ? 2 : 1,
+    format: 0,
+  });
+
+  return output;
+}
+
 // Thermer's original PHP sample uses json_encode($a, JSON_FORCE_OBJECT),
 // which converts the top-level array into a JSON object with numeric
 // string keys (e.g. {"0": {...}, "1": {...}}) instead of a plain array.
@@ -212,6 +300,61 @@ async function fetchRandomCreatureByCMC(cmc) {
 
   if (!res.ok) return null;
   return res.json();
+}
+
+// Generate Thermer JSON specifically for Momir creatures (includes image)
+function generateMomirThermerJson(creature) {
+  const output = [];
+  const divider = (char) => char.repeat(32);
+  const name = toAscii(creature.name);
+  const typeLine = toAscii(creature.type_line);
+  const cmcValue = creature.cmc || 0;
+  const rulesText = toAscii(creature.oracle_text);
+  
+  // Entry 1: Image (if available)
+  if (creature.image_uris?.normal) {
+    output.push({
+      type: 1, // image
+      path: creature.image_uris.normal,
+      align: 1, // center
+    });
+  }
+
+  // Entry 2: header block (name, cmc, type)
+  const headerLines = [divider("="), `NAME: ${name.toUpperCase()}`];
+  headerLines.push(`MANA: MV: ${cmcValue}`);
+  headerLines.push(`TYPE: ${typeLine}`, divider("-"));
+
+  output.push({
+    type: 0,
+    content: headerLines.join("<br />"),
+    bold: 1,
+    align: 0,
+    format: 0,
+  });
+
+  // Entry 3: QR code (optional)
+  if (creature.scryfall_uri) {
+    output.push({
+      type: 3, // QR code
+      value: creature.scryfall_uri,
+      size: DEFAULT_QR_SIZE_MM,
+      align: 2,
+    });
+  }
+
+  // Entry 4: rules text
+  if (rulesText) {
+    output.push({
+      type: 0,
+      content: `${divider("-")}<br />${rulesText}<br />${divider("=")}`,
+      bold: 0,
+      align: 0,
+      format: 0,
+    });
+  }
+
+  return output;
 }
 
 function jsonResponse(body, status = 200) {
@@ -246,6 +389,14 @@ export default {
       return jsonResponse(toForcedObject(thermerArray));
     }
 
+    if (url.pathname === "/api/search/print") {
+      if (!cardName) return jsonResponse({ error: "Missing 'card' parameter" }, 400);
+      const card = await fetchCardData(cardName);
+      if (!card) return jsonResponse({ error: `Card not found: ${cardName}` }, 404);
+      const thermerArray = generateThermerJsonWithImage(card);
+      return jsonResponse(toForcedObject(thermerArray));
+    }
+
     if (url.pathname === "/api/momir") {
       const cmc = url.searchParams.get("cmc");
       if (!cmc) return jsonResponse({ error: "Missing 'cmc' parameter" }, 400);
@@ -254,13 +405,24 @@ export default {
       return jsonResponse(creature);
     }
 
+    if (url.pathname === "/api/momir/print") {
+      const cmc = url.searchParams.get("cmc");
+      if (!cmc) return jsonResponse({ error: "Missing 'cmc' parameter" }, 400);
+      const creature = await fetchRandomCreatureByCMC(cmc);
+      if (!creature) return jsonResponse({ error: `No creature found with CMC ${cmc}` }, 404);
+      const thermerArray = generateMomirThermerJson(creature);
+      return jsonResponse(toForcedObject(thermerArray));
+    }
+
     return jsonResponse({
       status: "ok",
       app: "MTG Token Printer Worker",
       endpoints: [
         "/api/preview?card=NAME",
         "/api/search?card=NAME",
-        "/api/momir?cmc=X"
+        "/api/search/print?card=NAME",
+        "/api/momir?cmc=X",
+        "/api/momir/print?cmc=X"
       ],
     });
   },

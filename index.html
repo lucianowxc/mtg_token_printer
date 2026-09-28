@@ -206,6 +206,31 @@
             margin-top: 15px;
         }
 
+        .image-option {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .image-option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .image-option label {
+            margin: 0;
+            font-weight: 600;
+            color: #2c5282;
+            cursor: pointer;
+            flex: 1;
+        }
+
         .history-section {
             background: white;
             border-radius: 16px;
@@ -316,6 +341,11 @@
             </div>
 
             <div class="divider"></div>
+
+            <div class="image-option">
+                <input type="checkbox" id="includeImageCheckbox">
+                <label for="includeImageCheckbox">🖼️ Incluir Imagem na Impressão</label>
+            </div>
 
             <div class="print-button-group">
                 <a
@@ -478,12 +508,15 @@
 
             if (!currentCard) return;
 
-            // Construct the Thermer URL with response endpoint
-            const cardName = encodeURIComponent(currentCard.name);
-            const responseUrl = `${API_BASE}/api/search?card=${cardName}`;
+            const includeImage = document.getElementById('includeImageCheckbox').checked;
+
+            // Choose endpoint based on checkbox
+            const endpoint = includeImage 
+                ? `${API_BASE}/api/search/print?card=${encodeURIComponent(currentCard.name)}`
+                : `${API_BASE}/api/search?card=${encodeURIComponent(currentCard.name)}`;
 
             // Thermer uses the bprint:// protocol
-            window.location.href = `bprint://${responseUrl}`;
+            window.location.href = `bprint://${endpoint}`;
         }
 
         function clearPreview() {
