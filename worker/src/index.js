@@ -82,6 +82,22 @@ async function fetchCardData(searchName) {
   return cardInfo;
 }
 
+// Scryfall text often contains Unicode punctuation (em/en dashes, curly
+// quotes, bullet points) that the Thermer app / thermal printer's limited
+// charset seems to choke on — we observed the entry containing "—" being
+// silently dropped entirely while pure-ASCII entries printed fine.
+// Sanitize to ASCII-safe equivalents before building any entry content.
+function toAscii(str) {
+  if (!str) return str;
+  return str
+    .replace(/[\u2014\u2013]/g, "-") // em dash, en dash -> hyphen
+    .replace(/[\u2018\u2019]/g, "'") // curly single quotes -> straight
+    .replace(/[\u201c\u201d]/g, '"') // curly double quotes -> straight
+    .replace(/\u2022/g, "*") // bullet -> asterisk
+    .replace(/\u2026/g, "...") // ellipsis -> three dots
+    .replace(/[^\x00-\x7F]/g, "?"); // any remaining non-ASCII -> ?
+}
+
 // Thermer's FREE plan only allows up to 5 entries per print job.
 // We consolidate multiple lines into a single text entry using "<br />"
 // (documented by Thermer as the way to do multi-line text in one entry),
@@ -89,18 +105,24 @@ async function fetchCardData(searchName) {
 function generateThermerJson(card) {
   const output = [];
   const divider = (char) => char.repeat(32);
+  const name = toAscii(card.name);
+  const typeLine = toAscii(card.type_line);
+  const manaCost = toAscii(card.mana_cost);
+  const rulesText = toAscii(card.rules_text);
+  const flavorText = toAscii(card.flavor_text);
+  const pt = toAscii(card.pt);
 
   // Entry 1: header block (name, mana, type)
-  const headerLines = [divider("="), `NAME: ${card.name.toUpperCase()}`];
+  const headerLines = [divider("="), `NAME: ${name.toUpperCase()}`];
 
-  if (card.mana_cost || card.mana_value !== null) {
-    const costString = card.mana_cost
-      ? `${card.mana_cost} (MV: ${card.mana_value ?? 0})`
+  if (manaCost || card.mana_value !== null) {
+    const costString = manaCost
+      ? `${manaCost} (MV: ${card.mana_value ?? 0})`
       : `MV: ${card.mana_value ?? 0}`;
     headerLines.push(`MANA: ${costString}`);
   }
 
-  headerLines.push(`TYPE: ${card.type_line}`, divider("-"));
+  headerLines.push(`TYPE: ${typeLine}`, divider("-"));
 
   output.push({
     type: 0,
@@ -122,12 +144,12 @@ function generateThermerJson(card) {
 
   // Entry 3: rules text + flavor text combined
   const bodyLines = [];
-  if (card.rules_text) {
-    bodyLines.push(card.rules_text);
+  if (rulesText) {
+    bodyLines.push(rulesText);
   }
-  if (card.flavor_text) {
+  if (flavorText) {
     if (bodyLines.length) bodyLines.push(divider("-"));
-    bodyLines.push(card.flavor_text);
+    bodyLines.push(flavorText);
   }
   if (bodyLines.length) {
     output.push({
@@ -141,8 +163,8 @@ function generateThermerJson(card) {
 
   // Entry 4: footer (P/T + closing divider + feed)
   const footerLines = [divider("-")];
-  if (card.pt) {
-    footerLines.push(`[${card.pt}]`);
+  if (pt) {
+    footerLines.push(`[${pt}]`);
   }
   footerLines.push(divider("="), " ", " ");
 
