@@ -198,6 +198,22 @@ function toForcedObject(arr) {
   return obj;
 }
 
+async function fetchRandomCreatureByCMC(cmc) {
+  const cmcValue = parseInt(cmc, 10);
+  if (isNaN(cmcValue) || cmcValue < 0 || cmcValue > 20) {
+    return null;
+  }
+
+  const query = `type:creature cmc:${cmcValue}`;
+  const res = await fetch(
+    `https://api.scryfall.com/cards/random?q=${encodeURIComponent(query)}`,
+    { headers: SCRYFALL_HEADERS }
+  );
+
+  if (!res.ok) return null;
+  return res.json();
+}
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -230,10 +246,22 @@ export default {
       return jsonResponse(toForcedObject(thermerArray));
     }
 
+    if (url.pathname === "/api/momir") {
+      const cmc = url.searchParams.get("cmc");
+      if (!cmc) return jsonResponse({ error: "Missing 'cmc' parameter" }, 400);
+      const creature = await fetchRandomCreatureByCMC(cmc);
+      if (!creature) return jsonResponse({ error: `No creature found with CMC ${cmc}` }, 404);
+      return jsonResponse(creature);
+    }
+
     return jsonResponse({
       status: "ok",
       app: "MTG Token Printer Worker",
-      endpoints: ["/api/preview?card=NAME", "/api/search?card=NAME"],
+      endpoints: [
+        "/api/preview?card=NAME",
+        "/api/search?card=NAME",
+        "/api/momir?cmc=X"
+      ],
     });
   },
 };
