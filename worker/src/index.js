@@ -173,6 +173,18 @@ function generateThermerJson(card) {
   return output;
 }
 
+// Thermer's original PHP sample uses json_encode($a, JSON_FORCE_OBJECT),
+// which converts the top-level array into a JSON object with numeric
+// string keys (e.g. {"0": {...}, "1": {...}}) instead of a plain array.
+// The app appears to require this exact shape ("Entry not found" otherwise).
+function toForcedObject(arr) {
+  const obj = {};
+  arr.forEach((item, index) => {
+    obj[String(index)] = item;
+  });
+  return obj;
+}
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -201,7 +213,8 @@ export default {
       if (!cardName) return jsonResponse({ error: "Missing 'card' parameter" }, 400);
       const card = await fetchCardData(cardName);
       if (!card) return jsonResponse({ error: `Card not found: ${cardName}` }, 404);
-      return jsonResponse(generateThermerJson(card));
+      const thermerArray = generateThermerJson(card);
+      return jsonResponse(toForcedObject(thermerArray));
     }
 
     return jsonResponse({
