@@ -22,6 +22,8 @@ const SCRYFALL_HEADERS = {
   "Accept": "application/json",
 };
 
+const DEFAULT_QR_SIZE_MM = 60;
+
 async function fetchCardData(searchName) {
   const isGenericToken = TOKEN_KEYWORDS.includes(searchName.toLowerCase().trim());
   let data;
@@ -137,7 +139,7 @@ function generateThermerJson(card) {
     output.push({
       type: 3, // QR code
       value: card.scryfall_uri,
-      size: 40,
+      size: DEFAULT_QR_SIZE_MM,
       align: 2,
     });
   }

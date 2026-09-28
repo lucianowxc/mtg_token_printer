@@ -14,9 +14,12 @@ Format: 0=normal, 1=double height, 2=double height+width, 3=double width, 4=smal
 import os
 
 
+DEFAULT_QR_SIZE_MM = 60
+
+
 class ThermerLayout:
-    def __init__(self):
-        pass
+    def __init__(self, qr_size_mm=DEFAULT_QR_SIZE_MM):
+        self.qr_size_mm = qr_size_mm
 
     def generate_token_json(
         self,
@@ -63,7 +66,7 @@ class ThermerLayout:
                 {
                     "type": 3,  # QR code
                     "value": scryfall_uri,
-                    "size": 60,  # mm
+                    "size": self.qr_size_mm,  # mm
                     "align": 2,  # right
                 }
             )
