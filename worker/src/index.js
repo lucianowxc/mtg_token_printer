@@ -202,7 +202,7 @@ function generateThermerJsonWithImage(card) {
     });
   }
 
-  // Entry 2: header block (name, mana, type)
+  // Entry 2: header block (name, mana, type) + P/T consolidated
   const headerLines = [divider("="), `NAME: ${name.toUpperCase()}`];
 
   if (manaCost || card.mana_value !== null) {
@@ -212,7 +212,14 @@ function generateThermerJsonWithImage(card) {
     headerLines.push(`MANA: ${costString}`);
   }
 
-  headerLines.push(`TYPE: ${typeLine}`, divider("-"));
+  headerLines.push(`TYPE: ${typeLine}`);
+  
+  // Add P/T to header if available
+  if (pt) {
+    headerLines.push(`P/T: ${pt}`);
+  }
+  
+  headerLines.push(divider("-"));
 
   output.push({
     type: 0,
@@ -251,18 +258,12 @@ function generateThermerJsonWithImage(card) {
     });
   }
 
-  // Entry 5: footer (P/T + closing divider + feed)
-  const footerLines = [divider("-")];
-  if (pt) {
-    footerLines.push(`[${pt}]`);
-  }
-  footerLines.push(divider("="), " ", " ");
-
+  // Entry 5: closing divider + feed
   output.push({
     type: 0,
-    content: footerLines.join("<br />"),
+    content: `${divider("=")} `,
     bold: 1,
-    align: card.pt ? 2 : 1,
+    align: 1,
     format: 0,
   });
 
@@ -310,6 +311,9 @@ function generateMomirThermerJson(creature) {
   const typeLine = toAscii(creature.type_line);
   const cmcValue = creature.cmc || 0;
   const rulesText = toAscii(creature.oracle_text);
+  const pt = creature.power && creature.toughness 
+    ? `${creature.power}/${creature.toughness}` 
+    : null;
   
   // Entry 1: Image (if available)
   if (creature.image_uris?.normal) {
@@ -320,10 +324,17 @@ function generateMomirThermerJson(creature) {
     });
   }
 
-  // Entry 2: header block (name, cmc, type)
+  // Entry 2: header block (name, cmc, type) + P/T consolidated
   const headerLines = [divider("="), `NAME: ${name.toUpperCase()}`];
   headerLines.push(`MANA: MV: ${cmcValue}`);
-  headerLines.push(`TYPE: ${typeLine}`, divider("-"));
+  headerLines.push(`TYPE: ${typeLine}`);
+  
+  // Add P/T to header if available
+  if (pt) {
+    headerLines.push(`P/T: ${pt}`);
+  }
+  
+  headerLines.push(divider("-"));
 
   output.push({
     type: 0,
@@ -343,13 +354,22 @@ function generateMomirThermerJson(creature) {
     });
   }
 
-  // Entry 4: rules text
+  // Entry 4: rules text + closing divider
   if (rulesText) {
     output.push({
       type: 0,
       content: `${divider("-")}<br />${rulesText}<br />${divider("=")}`,
       bold: 0,
       align: 0,
+      format: 0,
+    });
+  } else {
+    // If no rules text, add closing divider separately
+    output.push({
+      type: 0,
+      content: divider("="),
+      bold: 1,
+      align: 1,
       format: 0,
     });
   }
