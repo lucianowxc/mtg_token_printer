@@ -251,6 +251,15 @@
             background: #1e3c72;
         }
 
+        .action-btn.thermer {
+            background: #22c55e;
+            color: white;
+        }
+
+        .action-btn.thermer:active {
+            background: #16a34a;
+        }
+
         @media (max-width: 600px) {
             .cmc-buttons {
                 grid-template-columns: repeat(7, 1fr);
@@ -317,6 +326,7 @@
             <div id="creatureTextContainer"></div>
 
             <div class="action-buttons">
+                <button class="action-btn thermer" id="printBtn">🖨️ Imprimir</button>
                 <a class="action-btn scryfall" id="scryfallLink" target="_blank">Ver no Scryfall</a>
                 <button class="action-btn again" id="againBtn">Gerar Outra</button>
             </div>
@@ -326,6 +336,7 @@
     <script>
         const API_BASE = 'https://mtg-token-printer-worker.luciano-wxc.workers.dev';
         let selectedCMC = null;
+        let currentCreature = null;
 
         // Initialize CMC buttons
         function initCMCButtons() {
@@ -413,12 +424,27 @@
             // Scryfall link
             document.getElementById('scryfallLink').href = creature.scryfall_uri || '#';
 
+            // Store current creature for printing
+            currentCreature = creature;
+
             section.classList.add('active');
+        }
+
+        function printWithThermer() {
+            if (!currentCreature) return;
+
+            // Construct the Thermer URL with search endpoint
+            const creatureName = encodeURIComponent(currentCreature.name);
+            const responseUrl = `${API_BASE}/api/search?card=${creatureName}`;
+
+            // Thermer uses the bprint:// protocol
+            window.location.href = `bprint://${responseUrl}`;
         }
 
         // Event listeners
         document.getElementById('generateBtn').addEventListener('click', generateCreature);
         document.getElementById('againBtn').addEventListener('click', generateCreature);
+        document.getElementById('printBtn').addEventListener('click', printWithThermer);
 
         // Initialize
         initCMCButtons();
