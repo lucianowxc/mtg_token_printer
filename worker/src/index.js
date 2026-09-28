@@ -22,7 +22,7 @@ const SCRYFALL_HEADERS = {
   "Accept": "application/json",
 };
 
-const DEFAULT_QR_SIZE_MM = 60;
+const DEFAULT_QR_SIZE_MM = 120;
 
 async function fetchCardData(searchName) {
   const isGenericToken = TOKEN_KEYWORDS.includes(searchName.toLowerCase().trim());
