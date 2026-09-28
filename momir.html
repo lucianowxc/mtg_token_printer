@@ -133,6 +133,30 @@
             flex: 1;
         }
 
+        .image-option {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .image-option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .image-option label {
+            margin: 0;
+            font-weight: 600;
+            color: #2c5282;
+            cursor: pointer;
+            flex: 1;
+        }
+
         .surprise-section {
             background: white;
             border-radius: 16px;
@@ -379,6 +403,11 @@
                 <label for="surpriseModeCheckbox">🎁 Modo Surpresa (não revelar antes de imprimir)</label>
             </div>
 
+            <div class="image-option">
+                <input type="checkbox" id="includeImageCheckbox">
+                <label for="includeImageCheckbox">🖼️ Incluir Imagem na Impressão</label>
+            </div>
+
             <div class="loading" id="loading">
                 ⏳ Buscando criatura aleatória...
             </div>
@@ -432,6 +461,7 @@
         const API_BASE = 'https://mtg-token-printer-worker.luciano-wxc.workers.dev';
         let selectedCMC = null;
         let currentCreature = null;
+        let lastUsedCMC = null;
 
         // Initialize CMC buttons
         function initCMCButtons() {
@@ -479,6 +509,9 @@
                 }
 
                 const creature = await response.json();
+                
+                // Store the CMC used for this generation (for printing)
+                lastUsedCMC = selectedCMC;
                 
                 if (isSurpriseMode) {
                     // Surprise mode: store creature but don't display preview
@@ -537,14 +570,17 @@
         }
 
         function printWithThermer() {
-            if (!currentCreature) return;
+            if (!currentCreature || lastUsedCMC === null) return;
 
-            // Construct the Thermer URL with search endpoint
-            const creatureName = encodeURIComponent(currentCreature.name);
-            const responseUrl = `${API_BASE}/api/search?card=${creatureName}`;
+            const includeImage = document.getElementById('includeImageCheckbox').checked;
+            
+            // Choose endpoint based on checkbox
+            const endpoint = includeImage 
+                ? `${API_BASE}/api/momir/print?cmc=${lastUsedCMC}`
+                : `${API_BASE}/api/search?card=${encodeURIComponent(currentCreature.name)}`;
 
             // Thermer uses the bprint:// protocol
-            window.location.href = `bprint://${responseUrl}`;
+            window.location.href = `bprint://${endpoint}`;
         }
 
         function revealSurprise() {
@@ -556,8 +592,16 @@
         }
 
         function printSurprise() {
-            if (!currentCreature) return;
-            printWithThermer();
+            if (!currentCreature || lastUsedCMC === null) return;
+            
+            const includeImage = document.getElementById('includeImageCheckbox').checked;
+            
+            // Choose endpoint based on checkbox
+            const endpoint = includeImage 
+                ? `${API_BASE}/api/momir/print?cmc=${lastUsedCMC}`
+                : `${API_BASE}/api/search?card=${encodeURIComponent(currentCreature.name)}`;
+            
+            window.location.href = `bprint://${endpoint}`;
         }
 
         // Event listeners
