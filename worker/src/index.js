@@ -161,10 +161,15 @@ function generateThermerJson(card) {
 // which converts the top-level array into a JSON object with numeric
 // string keys (e.g. {"0": {...}, "1": {...}}) instead of a plain array.
 // The app appears to require this exact shape ("Entry not found" otherwise).
+//
+// NOTE: we observed the entry at key "0" being silently dropped when
+// printing (header block never appeared). Hypothesis: Thermer's parser
+// is 1-indexed and skips/ignores key "0". We start numbering at 1 to
+// test/work around this.
 function toForcedObject(arr) {
   const obj = {};
   arr.forEach((item, index) => {
-    obj[String(index)] = item;
+    obj[String(index + 1)] = item;
   });
   return obj;
 }
