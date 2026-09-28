@@ -1,0 +1,5 @@
+python-escpos[serial]
+pybluez
+asyncio
+scrython
+requests
