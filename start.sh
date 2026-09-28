@@ -29,7 +29,7 @@ LOCAL_IP=$(hostname -I | awk '{print $1}')
 echo ""
 echo "✅ Ready to start!"
 echo ""
-echo "📱 Access from your iPhone:"
+echo "📱 Access from your device (iOS or Android):"
 echo "   http://$LOCAL_IP:5000"
 echo ""
 echo "Starting Flask server..."

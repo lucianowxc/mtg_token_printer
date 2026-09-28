@@ -1,5 +1,5 @@
 """
-ThermerLayout: Converts MTG token data to JSON format compatible with Thermer iOS app.
+ThermerLayout: Converts MTG token data to JSON format compatible with Thermer app (iOS & Android).
 
 Thermer type definitions:
 - 0: text
@@ -14,7 +14,7 @@ Format: 0=normal, 1=double height, 2=double height+width, 3=double width, 4=smal
 import os
 
 
-DEFAULT_QR_SIZE_MM = 60
+DEFAULT_QR_SIZE_MM = 120
 
 
 class ThermerLayout:

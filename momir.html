@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Momir Vig - Random Creature Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding-top: 20px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 14px;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 1;
+        }
+
+        .control-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .cmc-selector {
+            margin-bottom: 20px;
+        }
+
+        .cmc-selector label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .cmc-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
+            gap: 8px;
+        }
+
+        .cmc-btn {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            color: #333;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .cmc-btn:hover {
+            border-color: #1e3c72;
+            background: #f0f4f8;
+        }
+
+        .cmc-btn.active {
+            background: #1e3c72;
+            color: white;
+            border-color: #1e3c72;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3);
+        }
+
+        .generate-btn:active {
+            transform: scale(0.98);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 15px;
+            color: #1e3c72;
+            font-weight: 500;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .creature-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .creature-section.active {
+            display: block;
+        }
+
+        .creature-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: #f0f0f0;
+        }
+
+        .creature-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e3c72;
+            margin-bottom: 12px;
+        }
+
+        .creature-stat {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .creature-stat .label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 15px 0;
+        }
+
+        .creature-text {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding: 12px;
+            background: #f8f8f8;
+            border-radius: 6px;
+            border-left: 3px solid #2a5298;
+        }
+
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .action-btn.scryfall {
+            background: #667eea;
+            color: white;
+        }
+
+        .action-btn.scryfall:active {
+            background: #5568d3;
+        }
+
+        .action-btn.again {
+            background: #2a5298;
+            color: white;
+        }
+
+        .action-btn.again:active {
+            background: #1e3c72;
+        }
+
+        @media (max-width: 600px) {
+            .cmc-buttons {
+                grid-template-columns: repeat(7, 1fr);
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .creature-name {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Momir Vig</h1>
+            <p>Random Creature Generator</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="index.html">← Voltar</a>
+        </div>
+
+        <div class="control-section">
+            <div class="error" id="error"></div>
+
+            <div class="cmc-selector">
+                <label>Selecione o Custo de Mana (CMC):</label>
+                <div class="cmc-buttons" id="cmcButtons"></div>
+            </div>
+
+            <div class="loading" id="loading">
+                ⏳ Buscando criatura aleatória...
+            </div>
+
+            <button class="generate-btn" id="generateBtn" disabled>
+                Gerar Criatura
+            </button>
+        </div>
+
+        <div class="creature-section" id="creatureSection">
+            <img class="creature-image" id="creatureImage" src="" alt="Creature art">
+
+            <div class="creature-name" id="creatureName"></div>
+
+            <div class="creature-stat">
+                <span class="label">Tipo:</span>
+                <span id="creatureType"></span>
+            </div>
+
+            <div class="creature-stat">
+                <span class="label">Custo de Mana:</span>
+                <span id="creatureCMC"></span>
+            </div>
+
+            <div class="creature-stat">
+                <span class="label">Cores:</span>
+                <span id="creatureColors"></span>
+            </div>
+
+            <div id="creatureTextContainer"></div>
+
+            <div class="action-buttons">
+                <a class="action-btn scryfall" id="scryfallLink" target="_blank">Ver no Scryfall</a>
+                <button class="action-btn again" id="againBtn">Gerar Outra</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://mtg-token-printer-worker.luciano-wxc.workers.dev';
+        let selectedCMC = null;
+
+        // Initialize CMC buttons
+        function initCMCButtons() {
+            const container = document.getElementById('cmcButtons');
+            for (let i = 0; i <= 20; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'cmc-btn';
+                btn.textContent = i;
+                btn.dataset.cmc = i;
+                btn.addEventListener('click', () => selectCMC(i));
+                container.appendChild(btn);
+            }
+        }
+
+        function selectCMC(cmc) {
+            selectedCMC = cmc;
+            document.querySelectorAll('.cmc-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-cmc="${cmc}"]`).classList.add('active');
+            document.getElementById('generateBtn').disabled = false;
+        }
+
+        async function generateCreature() {
+            if (selectedCMC === null) return;
+
+            const errorEl = document.getElementById('error');
+            const loadingEl = document.getElementById('loading');
+            const creatureEl = document.getElementById('creatureSection');
+
+            errorEl.classList.remove('active');
+            loadingEl.classList.add('active');
+            creatureEl.classList.remove('active');
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/momir?cmc=${selectedCMC}`
+                );
+
+                if (!response.ok) {
+                    throw new Error(`Erro ao buscar criatura: ${response.status}`);
+                }
+
+                const creature = await response.json();
+                displayCreature(creature);
+            } catch (err) {
+                errorEl.textContent = err.message;
+                errorEl.classList.add('active');
+            } finally {
+                loadingEl.classList.remove('active');
+            }
+        }
+
+        function displayCreature(creature) {
+            const section = document.getElementById('creatureSection');
+
+            // Image
+            const imageUrl = creature.image_uris?.normal || creature.image_uris?.large || '';
+            document.getElementById('creatureImage').src = imageUrl;
+            document.getElementById('creatureImage').style.display = imageUrl ? 'block' : 'none';
+
+            // Name
+            document.getElementById('creatureName').textContent = creature.name;
+
+            // Type
+            document.getElementById('creatureType').textContent = creature.type_line || 'N/A';
+
+            // CMC
+            document.getElementById('creatureCMC').textContent = creature.cmc || '0';
+
+            // Colors
+            const colors = (creature.colors || []).join(', ') || 'Incolor';
+            document.getElementById('creatureColors').textContent = colors;
+
+            // Oracle text
+            const textContainer = document.getElementById('creatureTextContainer');
+            textContainer.innerHTML = '';
+            if (creature.oracle_text) {
+                const textEl = document.createElement('div');
+                textEl.className = 'creature-text';
+                textEl.textContent = creature.oracle_text;
+                textContainer.appendChild(textEl);
+            }
+
+            // Scryfall link
+            document.getElementById('scryfallLink').href = creature.scryfall_uri || '#';
+
+            section.classList.add('active');
+        }
+
+        // Event listeners
+        document.getElementById('generateBtn').addEventListener('click', generateCreature);
+        document.getElementById('againBtn').addEventListener('click', generateCreature);
+
+        // Initialize
+        initCMCButtons();
+    </script>
+</body>
+</html>

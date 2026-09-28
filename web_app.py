@@ -1,6 +1,6 @@
 """
 Web API for MTG Token Printer - Thermer Edition
-Serves JSON payloads compatible with Thermer iOS app for thermal printing.
+Serves JSON payloads compatible with Thermer app (iOS & Android) for thermal printing.
 """
 
 import json

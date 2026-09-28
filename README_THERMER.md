@@ -1,20 +1,20 @@
 # MTG Token Printer - Thermer Edition
 
-Imprima tokens de Magic: The Gathering na impressora térmica Knup KP-1026 usando seu iPhone! 
+Imprima tokens de Magic: The Gathering na impressora térmica Knup KP-1026 usando seu celular (iOS ou Android)! 
 
 ## ✨ Novo: Interface Web + Thermer App
 
-Este projeto foi refatorado para usar o app Thermer (iOS), permitindo:
-- ✅ Interface acessível via navegador Safari no iPhone
+Este projeto foi refatorado para usar o app Thermer (iOS & Android), permitindo:
+- ✅ Interface acessível via navegador Safari/Chrome no seu dispositivo
 - ✅ Busca de cards em tempo real
 - ✅ Preview antes de imprimir
 - ✅ Histórico de impressões
-- ✅ Zero configuração Bluetooth no iPhone
+- ✅ Zero configuração Bluetooth no dispositivo
 
 ## 🎯 Como Funciona
 
 ```
-iPhone (Safari) → Web Server → Thermer App → Impressora Bluetooth
+Dispositivo (Safari/Chrome) → Web Server → Thermer App → Impressora Bluetooth
 ```
 
 1. Acesse o website do seu celular (mesmo WiFi que o servidor)
@@ -30,7 +30,7 @@ A solução: mover a lógica de busca/transformação para um **Cloudflare Worke
 (gratuito, HTTPS, sempre online), e deixar só o `index.html` no GitHub Pages.
 
 ```
-iPhone → GitHub Pages (index.html) → Cloudflare Worker → Scryfall API
+Dispositivo → GitHub Pages (index.html) → Cloudflare Worker → Scryfall API
 ```
 
 ### Passo 1: Deploy do Worker (backend)
@@ -58,9 +58,9 @@ Em `index.html`, ache a linha com `workers.dev` e troque pela URL real do seu wo
 2. Em "Source", selecione a branch `main` e pasta `/ (root)`
 3. Salve — o site fica em `https://SEU_USUARIO.github.io/mtg_token_printer/`
 
-### Passo 4: Testar do iPhone
+### Passo 4: Testar do seu dispositivo
 
-Abra `https://SEU_USUARIO.github.io/mtg_token_printer/` no Safari — funciona
+Abra `https://SEU_USUARIO.github.io/mtg_token_printer/` no Safari (iOS) ou Chrome (Android) — funciona
 mesmo fora de casa, sem WiFi local, sem PC ligado.
 
 > Nota: `run.py`/`web_app.py` continuam funcionando localmente como antes,
@@ -73,9 +73,11 @@ mesmo fora de casa, sem WiFi local, sem PC ligado.
 - Impressora térmica Knup KP-1026 conectada via Bluetooth
 - Bluetooth já configurado (veja seção "Configuração WSL" abaixo)
 
-### No seu iPhone:
-- Safari ou qualquer navegador
-- App Thermer (gratuito): https://apps.apple.com/us/app/id1599863946
+### No seu dispositivo (iOS ou Android):
+- Safari (iOS) ou Chrome/navegador (Android)
+- App Thermer (gratuito): 
+  - iOS: https://apps.apple.com/us/app/id1599863946
+  - Android: https://play.google.com/store/apps/details?id=com.thermer
 - Conectado no **mesmo WiFi** que o servidor
 
 ## 🚀 Instalação Rápida
@@ -106,9 +108,9 @@ bluetoothctl
 sudo rfcomm bind 0 86:67:7A:B7:30:F9 1
 ```
 
-### 2. Instale o Thermer no iPhone
-- Acesse: https://apps.apple.com/us/app/id1599863946
-- Instale o app
+### 2. Instale o Thermer no seu dispositivo
+- **iOS**: https://apps.apple.com/us/app/id1599863946
+- **Android**: https://play.google.com/store/apps/details?id=com.thermer
 - Habilite "Browser Print function" nas configurações do app
 
 ### 3. Configure e rode o servidor
@@ -129,7 +131,7 @@ Vai mostrar algo como:
 Running on http://0.0.0.0:5000
 ```
 
-### 4. No seu iPhone
+### 4. No seu dispositivo (iOS ou Android)
 
 1. Descubra o IP do seu Windows/WSL:
    ```bash
