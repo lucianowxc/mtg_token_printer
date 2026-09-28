@@ -388,6 +388,10 @@
         }
 
         @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+
             .cmc-buttons {
                 grid-template-columns: repeat(7, 1fr);
             }
@@ -398,6 +402,30 @@
 
             .creature-name {
                 font-size: 22px;
+            }
+
+            .control-section,
+            .creature-section,
+            .surprise-section {
+                padding: 20px;
+            }
+
+            .action-buttons,
+            .surprise-buttons {
+                gap: 8px;
+            }
+
+            .action-btn,
+            .print-button,
+            .print-surprise,
+            .reveal-btn {
+                padding: 16px 20px;
+                font-size: 15px;
+            }
+
+            .footer {
+                margin-top: 60px;
+                padding: 30px 0 40px 0;
             }
         }
     </style>
