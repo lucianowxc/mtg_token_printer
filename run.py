@@ -1,7 +1,7 @@
 import asyncio
-from archidekt_fetcher import ArchidektFetcher
-from scryfall_fetcher import ScryfallFetcher
-from mtg_layout import MTGTokenLayout
+from src.archidekt_fetcher import ArchidektFetcher
+from src.scryfall_fetcher import ScryfallFetcher
+from src.mtg_layout import MTGTokenLayout
 
 async def process_and_print_token(search_term, fetcher, printer_layout):
     """Encapsulates the standalone print pipeline workflow frame."""

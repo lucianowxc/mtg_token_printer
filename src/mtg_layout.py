@@ -1,5 +1,5 @@
 import os
-from base_printer import BasePrinter
+from src.base_printer import BasePrinter
 
 class MTGTokenLayout(BasePrinter):
     def __init__(self, devfile="/dev/rfcomm0", baudrate=9600):
