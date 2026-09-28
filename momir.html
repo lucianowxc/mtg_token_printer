@@ -108,6 +108,86 @@
             border-color: #1e3c72;
         }
 
+        .surprise-mode {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .surprise-mode input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .surprise-mode label {
+            margin: 0;
+            font-weight: 600;
+            color: #856404;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .surprise-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            text-align: center;
+        }
+
+        .surprise-section.active {
+            display: block;
+        }
+
+        .surprise-message {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e3c72;
+            margin-bottom: 20px;
+        }
+
+        .surprise-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .surprise-buttons button {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .surprise-buttons .print-surprise {
+            background: #22c55e;
+            color: white;
+        }
+
+        .surprise-buttons .print-surprise:active {
+            background: #16a34a;
+        }
+
+        .surprise-buttons .reveal-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .surprise-buttons .reveal-btn:active {
+            background: #5568d3;
+        }
+
         .generate-btn {
             width: 100%;
             padding: 14px 24px;
@@ -294,6 +374,11 @@
                 <div class="cmc-buttons" id="cmcButtons"></div>
             </div>
 
+            <div class="surprise-mode">
+                <input type="checkbox" id="surpriseModeCheckbox">
+                <label for="surpriseModeCheckbox">🎁 Modo Surpresa (não revelar antes de imprimir)</label>
+            </div>
+
             <div class="loading" id="loading">
                 ⏳ Buscando criatura aleatória...
             </div>
@@ -301,6 +386,16 @@
             <button class="generate-btn" id="generateBtn" disabled>
                 Gerar Criatura
             </button>
+        </div>
+
+        <div class="surprise-section" id="surpriseSection">
+            <div class="surprise-message">🎁 Criatura sorteada!</div>
+            <p style="color: #666; margin-bottom: 20px; font-size: 14px;">A criatura está pronta. Clique em "Imprimir Surpresa" para revelar ao grupo!</p>
+
+            <div class="surprise-buttons">
+                <button class="print-surprise" id="printSurpriseBtn">🖨️ Imprimir Surpresa</button>
+                <button class="reveal-btn" id="revealBtn">👁️ Revelar</button>
+            </div>
         </div>
 
         <div class="creature-section" id="creatureSection">
@@ -366,10 +461,13 @@
             const errorEl = document.getElementById('error');
             const loadingEl = document.getElementById('loading');
             const creatureEl = document.getElementById('creatureSection');
+            const surpriseEl = document.getElementById('surpriseSection');
+            const isSurpriseMode = document.getElementById('surpriseModeCheckbox').checked;
 
             errorEl.classList.remove('active');
             loadingEl.classList.add('active');
             creatureEl.classList.remove('active');
+            surpriseEl.classList.remove('active');
 
             try {
                 const response = await fetch(
@@ -381,7 +479,15 @@
                 }
 
                 const creature = await response.json();
-                displayCreature(creature);
+                
+                if (isSurpriseMode) {
+                    // Surprise mode: store creature but don't display preview
+                    currentCreature = creature;
+                    surpriseEl.classList.add('active');
+                } else {
+                    // Normal mode: display full preview
+                    displayCreature(creature);
+                }
             } catch (err) {
                 errorEl.textContent = err.message;
                 errorEl.classList.add('active');
@@ -441,10 +547,25 @@
             window.location.href = `bprint://${responseUrl}`;
         }
 
+        function revealSurprise() {
+            if (!currentCreature) return;
+            
+            // Switch to normal creature display
+            document.getElementById('surpriseSection').classList.remove('active');
+            displayCreature(currentCreature);
+        }
+
+        function printSurprise() {
+            if (!currentCreature) return;
+            printWithThermer();
+        }
+
         // Event listeners
         document.getElementById('generateBtn').addEventListener('click', generateCreature);
         document.getElementById('againBtn').addEventListener('click', generateCreature);
         document.getElementById('printBtn').addEventListener('click', printWithThermer);
+        document.getElementById('printSurpriseBtn').addEventListener('click', printSurprise);
+        document.getElementById('revealBtn').addEventListener('click', revealSurprise);
 
         // Initialize
         initCMCButtons();
