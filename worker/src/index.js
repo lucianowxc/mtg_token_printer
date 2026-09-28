@@ -24,6 +24,55 @@ const SCRYFALL_HEADERS = {
 
 const DEFAULT_QR_SIZE_MM = 120;
 
+// Search for multiple card results with smart ranking
+async function searchCards(searchName) {
+  const isGenericToken = TOKEN_KEYWORDS.includes(searchName.toLowerCase().trim());
+  let results = [];
+
+  try {
+    if (isGenericToken) {
+      const query = `t:token ${searchName}`;
+      const res = await fetch(
+        `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=released&dir=desc`,
+        { headers: SCRYFALL_HEADERS }
+      );
+      if (res.ok) {
+        const json = await res.json();
+        results = json.data || [];
+      }
+    } else {
+      // Try exact match first
+      try {
+        const exactRes = await fetch(
+          `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(searchName)}`,
+          { headers: SCRYFALL_HEADERS }
+        );
+        if (exactRes.ok) {
+          results = [await exactRes.json()];
+        }
+      } catch (e) {
+        // Exact match failed, try fuzzy + search for more results
+        try {
+          const searchRes = await fetch(
+            `https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchName)}&order=released&dir=desc`,
+            { headers: SCRYFALL_HEADERS }
+          );
+          if (searchRes.ok) {
+            const json = await searchRes.json();
+            results = (json.data || []).slice(0, 5); // Top 5 results
+          }
+        } catch (e2) {
+          // Search also failed
+        }
+      }
+    }
+  } catch (e) {
+    // Silently fail
+  }
+
+  return results;
+}
+
 async function fetchCardData(searchName) {
   const isGenericToken = TOKEN_KEYWORDS.includes(searchName.toLowerCase().trim());
   let data;
@@ -48,6 +97,13 @@ async function fetchCardData(searchName) {
     data = await res.json();
   }
 
+  return formatCardInfo(data, searchName);
+}
+
+// Convert Scryfall card data to our standard format
+function formatCardInfo(data, searchName = null) {
+  if (!data) return null;
+
   const cardInfo = {
     name: data.name || "Unknown",
     type_line: data.type_line || "Token",
@@ -64,9 +120,10 @@ async function fetchCardData(searchName) {
     cardInfo.pt = `${data.power}/${data.toughness}`;
   }
 
+  // Handle card faces
   if (data.card_faces) {
     let targetFace = data.card_faces[0];
-    if (isGenericToken) {
+    if (searchName) {
       const match = data.card_faces.find((f) =>
         (f.name || "").toLowerCase().includes(searchName.toLowerCase())
       );
@@ -409,6 +466,29 @@ export default {
       return jsonResponse(toForcedObject(thermerArray));
     }
 
+    if (url.pathname === "/api/search/list") {
+      if (!cardName) return jsonResponse({ error: "Missing 'card' parameter" }, 400);
+      const results = await searchCards(cardName);
+      if (results.length === 0) return jsonResponse({ error: `Card not found: ${cardName}` }, 404);
+      
+      // Format results
+      const formattedResults = results.map((data, index) => {
+        const cardInfo = formatCardInfo(data, cardName);
+        return {
+          id: index,
+          name: cardInfo.name,
+          type_line: cardInfo.type_line,
+          pt: cardInfo.pt,
+          mana_cost: cardInfo.mana_cost,
+          mana_value: cardInfo.mana_value,
+          rules_text: cardInfo.rules_text,
+          scryfall_uri: cardInfo.scryfall_uri,
+        };
+      });
+      
+      return jsonResponse({ results: formattedResults });
+    }
+
     if (url.pathname === "/api/search/print") {
       if (!cardName) return jsonResponse({ error: "Missing 'card' parameter" }, 400);
       const card = await fetchCardData(cardName);
@@ -440,6 +520,7 @@ export default {
       endpoints: [
         "/api/preview?card=NAME",
         "/api/search?card=NAME",
+        "/api/search/list?card=NAME",
         "/api/search/print?card=NAME",
         "/api/momir?cmc=X",
         "/api/momir/print?cmc=X"

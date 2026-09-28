@@ -287,6 +287,78 @@
             margin: 4px 0;
         }
 
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .card-option {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .card-option:hover {
+            border-color: #667eea;
+            background: #f0f4f8;
+        }
+
+        .card-option-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .card-option-details {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 15px;
@@ -406,6 +478,14 @@
             <ul class="history-list" id="history-list"></ul>
         </div>
 
+        <div class="modal" id="selectionModal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeSelectionModal()">&times;</span>
+                <div class="modal-header">Escolha a carta desejada:</div>
+                <div id="selectionList"></div>
+            </div>
+        </div>
+
         <div class="footer">
             <p>🎴 <strong>MTG Token Printer</strong> • Implementação por <a href="https://github.com/lucianowxc" target="_blank">Luciano Cejnog</a></p>
             <p>Powered by <a href="https://scryfall.com" target="_blank">Scryfall</a>, <a href="https://www.thermerapp.com/" target="_blank">Thermer</a> & <a href="https://knup.com.br/produto/kp-1025/" target="_blank">KNup KP-1025</a></p>
@@ -482,6 +562,76 @@
             previewEl.classList.remove("active");
 
             try {
+                // First try to get multiple results
+                const listResponse = await fetch(`${API_BASE}/api/search/list?card=${encodeURIComponent(cardName)}`);
+                const listData = await listResponse.json();
+
+                if (!listResponse.ok) {
+                    throw new Error(listData.error || "Carta não encontrada");
+                }
+
+                // Add to history
+                if (!searchHistory.includes(cardName)) {
+                    searchHistory.unshift(cardName);
+                    saveHistory();
+                }
+
+                // If only one result, show it directly
+                if (listData.results.length === 1) {
+                    // Get full data for single result
+                    const response = await fetch(`${API_BASE}/api/preview?card=${encodeURIComponent(listData.results[0].name)}`);
+                    const data = await response.json();
+                    currentCard = data;
+                    updatePreview(data);
+                    previewEl.classList.add("active");
+                } else {
+                    // Multiple results - show selection modal
+                    showSelectionModal(listData.results);
+                }
+
+            } catch (error) {
+                errorEl.textContent = "❌ " + error.message;
+                errorEl.classList.add("active");
+            } finally {
+                loadingEl.classList.remove("active");
+            }
+        }
+
+        function showSelectionModal(results) {
+            const selectionList = document.getElementById("selectionList");
+            selectionList.innerHTML = "";
+
+            results.forEach((card, index) => {
+                const div = document.createElement("div");
+                div.className = "card-option";
+                div.onclick = () => selectCardFromList(card.name);
+                
+                const name = document.createElement("div");
+                name.className = "card-option-name";
+                name.textContent = card.name;
+                div.appendChild(name);
+
+                const details = document.createElement("div");
+                details.className = "card-option-details";
+                const parts = [];
+                if (card.type_line) parts.push(card.type_line);
+                if (card.pt) parts.push(`${card.pt}`);
+                if (card.mana_cost) parts.push(card.mana_cost);
+                details.textContent = parts.join(" • ");
+                div.appendChild(details);
+
+                selectionList.appendChild(div);
+            });
+
+            document.getElementById("selectionModal").classList.add("active");
+        }
+
+        function closeSelectionModal() {
+            document.getElementById("selectionModal").classList.remove("active");
+        }
+
+        async function selectCardFromList(cardName) {
+            try {
                 const response = await fetch(`${API_BASE}/api/preview?card=${encodeURIComponent(cardName)}`);
                 const data = await response.json();
 
@@ -490,22 +640,12 @@
                 }
 
                 currentCard = data;
-
-                // Add to history
-                if (!searchHistory.includes(cardName)) {
-                    searchHistory.unshift(cardName);
-                    saveHistory();
-                }
-
-                // Update preview
                 updatePreview(data);
-                previewEl.classList.add("active");
-
+                document.getElementById("preview-section").classList.add("active");
+                closeSelectionModal();
             } catch (error) {
-                errorEl.textContent = "❌ " + error.message;
-                errorEl.classList.add("active");
-            } finally {
-                loadingEl.classList.remove("active");
+                document.getElementById("error-message").textContent = "❌ " + error.message;
+                document.getElementById("error-message").classList.add("active");
             }
         }
 
