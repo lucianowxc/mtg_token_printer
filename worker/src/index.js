@@ -82,18 +82,35 @@ async function fetchCardData(searchName) {
   return cardInfo;
 }
 
+// Thermer's FREE plan only allows up to 5 entries per print job.
+// We consolidate multiple lines into a single text entry using "<br />"
+// (documented by Thermer as the way to do multi-line text in one entry),
+// keeping the total entry count at 4 (1 spare under the limit).
 function generateThermerJson(card) {
   const output = [];
-  const divider = (char) => ({
+  const divider = (char) => char.repeat(32);
+
+  // Entry 1: header block (name, mana, type)
+  const headerLines = [divider("="), `NAME: ${card.name.toUpperCase()}`];
+
+  if (card.mana_cost || card.mana_value !== null) {
+    const costString = card.mana_cost
+      ? `${card.mana_cost} (MV: ${card.mana_value ?? 0})`
+      : `MV: ${card.mana_value ?? 0}`;
+    headerLines.push(`MANA: ${costString}`);
+  }
+
+  headerLines.push(`TYPE: ${card.type_line}`, divider("-"));
+
+  output.push({
     type: 0,
-    content: char.repeat(32),
-    bold: 0,
-    align: 1,
+    content: headerLines.join("<br />"),
+    bold: 1,
+    align: 0,
     format: 0,
   });
 
-  output.push(divider("="));
-
+  // Entry 2: QR code (optional)
   if (card.scryfall_uri) {
     output.push({
       type: 3, // QR code
@@ -103,72 +120,39 @@ function generateThermerJson(card) {
     });
   }
 
-  output.push({
-    type: 0,
-    content: `NAME: ${card.name.toUpperCase()}`,
-    bold: 1,
-    align: 0,
-    format: 0,
-  });
-
-  if (card.mana_cost || card.mana_value !== null) {
-    const costString = card.mana_cost
-      ? `${card.mana_cost} (MV: ${card.mana_value ?? 0})`
-      : `MV: ${card.mana_value ?? 0}`;
-    output.push({
-      type: 0,
-      content: `MANA: ${costString}`,
-      bold: 1,
-      align: 0,
-      format: 0,
-    });
-  }
-
-  output.push({
-    type: 0,
-    content: `TYPE: ${card.type_line}`,
-    bold: 1,
-    align: 0,
-    format: 0,
-  });
-
-  output.push(divider("-"));
-
+  // Entry 3: rules text + flavor text combined
+  const bodyLines = [];
   if (card.rules_text) {
+    bodyLines.push(card.rules_text);
+  }
+  if (card.flavor_text) {
+    if (bodyLines.length) bodyLines.push(divider("-"));
+    bodyLines.push(card.flavor_text);
+  }
+  if (bodyLines.length) {
     output.push({
       type: 0,
-      content: card.rules_text,
+      content: bodyLines.join("<br />"),
       bold: 0,
       align: 0,
       format: 0,
     });
-    output.push(divider("-"));
   }
 
-  if (card.flavor_text) {
-    output.push({
-      type: 0,
-      content: card.flavor_text,
-      bold: 0,
-      align: 1,
-      format: 4,
-    });
-    output.push(divider("-"));
-  }
-
+  // Entry 4: footer (P/T + closing divider + feed)
+  const footerLines = [divider("-")];
   if (card.pt) {
-    output.push({
-      type: 0,
-      content: `[${card.pt}]`,
-      bold: 1,
-      align: 2,
-      format: 3,
-    });
+    footerLines.push(`[${card.pt}]`);
   }
+  footerLines.push(divider("="), " ", " ");
 
-  output.push(divider("="));
-  output.push({ type: 0, content: " ", bold: 0, align: 0, format: 0 });
-  output.push({ type: 0, content: " ", bold: 0, align: 0, format: 0 });
+  output.push({
+    type: 0,
+    content: footerLines.join("<br />"),
+    bold: 1,
+    align: card.pt ? 2 : 1,
+    format: 0,
+  });
 
   return output;
 }
