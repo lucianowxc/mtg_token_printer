@@ -1,5 +1,6 @@
-python-escpos[serial]
-pybluez
-asyncio
+flask
 scrython
 requests
+python-dotenv
+# python-escpos[serial] e pybluez são para CLI apenas (legacy)
+# Não necessários para web_app.py

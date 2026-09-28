@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTG Token Printer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding-top: 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .card-input-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-group button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .input-group button:active {
+            background: #5568d3;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 15px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .preview-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .preview-section.active {
+            display: block;
+        }
+
+        .card-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .card-stat {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .card-stat .label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 15px 0;
+        }
+
+        .card-text {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .print-button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .print-button {
+            flex: 1;
+            padding: 14px 20px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .print-button.thermer {
+            background: #22c55e;
+            color: white;
+        }
+
+        .print-button.thermer:active {
+            background: #16a34a;
+        }
+
+        .print-button.clear {
+            background: #ef4444;
+            color: white;
+        }
+
+        .print-button.clear:active {
+            background: #dc2626;
+        }
+
+        .hint {
+            background: #eff6ff;
+            border-left: 4px solid #0284c7;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #0c4a6e;
+            margin-top: 15px;
+        }
+
+        .history-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .history-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .history-list {
+            list-style: none;
+        }
+
+        .history-item {
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #555;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .history-item:active {
+            background: #e8e8e8;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .card-input-section,
+            .preview-section {
+                padding: 16px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .print-button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🃏 MTG Token Printer</h1>
+            <p>Imprima tokens diretamente do seu iPhone</p>
+        </div>
+
+        <div class="card-input-section">
+            <div class="error" id="error-message"></div>
+            <div class="loading" id="loading">⏳ Buscando card...</div>
+
+            <div class="input-group">
+                <input
+                    type="text"
+                    id="card-search"
+                    placeholder="Digite o nome da carta (ex: Goblin)"
+                    autocomplete="off"
+                />
+                <button onclick="searchCard()">Buscar</button>
+            </div>
+
+            <div class="hint">
+                💡 Digite qualquer card de Magic: The Gathering. Tokens genéricos como "Treasure", "Clue", "Food" também funcionam!
+            </div>
+        </div>
+
+        <div class="preview-section" id="preview-section">
+            <div class="card-name" id="preview-name"></div>
+
+            <div class="card-stat">
+                <span class="label">Tipo:</span>
+                <span id="preview-type"></span>
+            </div>
+
+            <div class="card-stat">
+                <span class="label">Custo:</span>
+                <span id="preview-mana"></span>
+            </div>
+
+            <div class="divider"></div>
+
+            <div id="preview-rules"></div>
+            <div id="preview-flavor"></div>
+
+            <div class="card-stat" id="preview-pt-container" style="display: none;">
+                <span class="label">P/T:</span>
+                <span id="preview-pt"></span>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="print-button-group">
+                <a
+                    href="#"
+                    class="print-button thermer"
+                    id="print-button"
+                    onclick="openThermerPrint(event)"
+                >
+                    🖨️ Imprimir com Thermer
+                </a>
+                <button class="print-button clear" onclick="clearPreview()">
+                    ✕ Limpar
+                </button>
+            </div>
+
+            <div class="hint">
+                📱 Clique em "Imprimir com Thermer" para enviar à impressora. Certifique-se de que o app Thermer está instalado no seu iPhone!
+            </div>
+        </div>
+
+        <div class="history-section" id="history-section" style="display: none;">
+            <h3>📜 Histórico Recente</h3>
+            <ul class="history-list" id="history-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        // Se estiver rodando local (Flask), usa a própria origem.
+        // Se estiver no GitHub Pages, aponta para o Cloudflare Worker.
+        const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+            ? window.location.origin
+            : "https://mtg-token-printer-worker.SEU_SUBDOMINIO.workers.dev";
+
+        let currentCard = null;
+        let searchHistory = [];
+
+        // Load history from localStorage
+        function loadHistory() {
+            const saved = localStorage.getItem("mtg-history");
+            if (saved) {
+                searchHistory = JSON.parse(saved);
+                updateHistoryUI();
+            }
+        }
+
+        // Save history to localStorage
+        function saveHistory() {
+            // Keep only last 10 searches
+            searchHistory = searchHistory.slice(0, 10);
+            localStorage.setItem("mtg-history", JSON.stringify(searchHistory));
+            updateHistoryUI();
+        }
+
+        // Update history UI
+        function updateHistoryUI() {
+            if (searchHistory.length === 0) {
+                document.getElementById("history-section").style.display = "none";
+                return;
+            }
+
+            document.getElementById("history-section").style.display = "block";
+            const list = document.getElementById("history-list");
+            list.innerHTML = "";
+
+            searchHistory.forEach((card) => {
+                const item = document.createElement("li");
+                item.className = "history-item";
+                item.textContent = card;
+                item.onclick = () => {
+                    document.getElementById("card-search").value = card;
+                    searchCard();
+                };
+                list.appendChild(item);
+            });
+        }
+
+        async function searchCard() {
+            const cardName = document.getElementById("card-search").value.trim();
+            const errorEl = document.getElementById("error-message");
+            const loadingEl = document.getElementById("loading");
+            const previewEl = document.getElementById("preview-section");
+
+            errorEl.classList.remove("active");
+            errorEl.textContent = "";
+
+            if (!cardName) {
+                errorEl.textContent = "Digite o nome da carta!";
+                errorEl.classList.add("active");
+                return;
+            }
+
+            loadingEl.classList.add("active");
+            previewEl.classList.remove("active");
+
+            try {
+                const response = await fetch(`${API_BASE}/api/preview?card=${encodeURIComponent(cardName)}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Carta não encontrada");
+                }
+
+                currentCard = data;
+
+                // Add to history
+                if (!searchHistory.includes(cardName)) {
+                    searchHistory.unshift(cardName);
+                    saveHistory();
+                }
+
+                // Update preview
+                updatePreview(data);
+                previewEl.classList.add("active");
+
+            } catch (error) {
+                errorEl.textContent = "❌ " + error.message;
+                errorEl.classList.add("active");
+            } finally {
+                loadingEl.classList.remove("active");
+            }
+        }
+
+        function updatePreview(card) {
+            document.getElementById("preview-name").textContent = card.name;
+            document.getElementById("preview-type").textContent = card.type_line;
+
+            const manaText = card.mana_cost
+                ? `${card.mana_cost} (MV: ${card.mana_value || 0})`
+                : `MV: ${card.mana_value || 0}`;
+            document.getElementById("preview-mana").textContent = manaText;
+
+            // Rules text
+            const rulesEl = document.getElementById("preview-rules");
+            if (card.rules_text) {
+                rulesEl.innerHTML = `<div class="card-text"><strong>Efeito:</strong><br/>${card.rules_text}</div>`;
+            } else {
+                rulesEl.innerHTML = "";
+            }
+
+            // Flavor text
+            const flavorEl = document.getElementById("preview-flavor");
+            if (card.flavor_text) {
+                flavorEl.innerHTML = `<div class="card-text"><em>${card.flavor_text}</em></div>`;
+            } else {
+                flavorEl.innerHTML = "";
+            }
+
+            // P/T
+            const ptContainer = document.getElementById("preview-pt-container");
+            if (card.pt) {
+                document.getElementById("preview-pt").textContent = card.pt;
+                ptContainer.style.display = "block";
+            } else {
+                ptContainer.style.display = "none";
+            }
+        }
+
+        function openThermerPrint(event) {
+            event.preventDefault();
+
+            if (!currentCard) return;
+
+            // Construct the Thermer URL with response endpoint
+            const cardName = encodeURIComponent(currentCard.name);
+            const responseUrl = `${API_BASE}/api/search?card=${cardName}`;
+
+            // Thermer uses the bprint:// protocol
+            window.location.href = `bprint://${responseUrl}`;
+        }
+
+        function clearPreview() {
+            document.getElementById("card-search").value = "";
+            document.getElementById("preview-section").classList.remove("active");
+            currentCard = null;
+        }
+
+        // Enter key to search
+        document.addEventListener("DOMContentLoaded", () => {
+            loadHistory();
+            document.getElementById("card-search").addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    searchCard();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
