@@ -63,7 +63,7 @@ class ThermerLayout:
                 {
                     "type": 3,  # QR code
                     "value": scryfall_uri,
-                    "size": 40,  # mm
+                    "size": 60,  # mm
                     "align": 2,  # right
                 }
             )
