@@ -40,7 +40,7 @@ bluetoothctl> scan on (encontre o dispositivo com nome Knup KP-1026 e anote o en
 
 - Associe a porta COM com o endereço MAC da impressora térmica:
 ```bash
-sudo rfcomm bind 0 86:67:7A:B7:30:F9 1
+sudo rfcomm bind 0 XX:XX:XX:XX:XX:XX 1
 ```
 
 - Configure uma venv e instale os requerimentos do projeto:
