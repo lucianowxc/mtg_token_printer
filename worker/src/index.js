@@ -42,16 +42,16 @@ async function searchCards(searchName) {
       }
     } else {
       // Try exact match first
-      try {
-        const exactRes = await fetch(
-          `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(searchName)}`,
-          { headers: SCRYFALL_HEADERS }
-        );
-        if (exactRes.ok) {
-          results = [await exactRes.json()];
-        }
-      } catch (e) {
-        // Exact match failed, try fuzzy + search for more results
+      const exactRes = await fetch(
+        `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(searchName)}`,
+        { headers: SCRYFALL_HEADERS }
+      );
+      
+      if (exactRes.ok) {
+        // Found exact match, but also search for similar cards
+        results = [await exactRes.json()];
+        
+        // Try to get more results with fuzzy/search
         try {
           const searchRes = await fetch(
             `https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchName)}&order=released&dir=desc`,
@@ -59,15 +59,32 @@ async function searchCards(searchName) {
           );
           if (searchRes.ok) {
             const json = await searchRes.json();
-            results = (json.data || []).slice(0, 5); // Top 5 results
+            const otherResults = json.data || [];
+            // Add other results if they're different from the exact match
+            for (const card of otherResults) {
+              if (card.name.toLowerCase() !== searchName.toLowerCase()) {
+                results.push(card);
+                if (results.length >= 5) break;
+              }
+            }
           }
         } catch (e2) {
-          // Search also failed
+          // Ignore search error, we have the exact match
+        }
+      } else {
+        // No exact match, try search
+        const searchRes = await fetch(
+          `https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchName)}&order=released&dir=desc`,
+          { headers: SCRYFALL_HEADERS }
+        );
+        if (searchRes.ok) {
+          const json = await searchRes.json();
+          results = (json.data || []).slice(0, 5); // Top 5 results
         }
       }
     }
   } catch (e) {
-    // Silently fail
+    // Silently fail and return empty results
   }
 
   return results;
