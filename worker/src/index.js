@@ -90,6 +90,28 @@ async function searchCards(searchName) {
   return results;
 }
 
+// Autocomplete suggestions (lightweight, uses Scryfall autocomplete)
+async function autocompleteCards(query) {
+  if (!query || query.length < 2) return [];
+
+  try {
+    const res = await fetch(
+      `https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`,
+      { headers: SCRYFALL_HEADERS }
+    );
+    
+    if (res.ok) {
+      const json = await res.json();
+      // Return first 10 suggestions
+      return (json.data || []).slice(0, 10);
+    }
+  } catch (e) {
+    // Silently fail
+  }
+
+  return [];
+}
+
 async function fetchCardData(searchName) {
   const isGenericToken = TOKEN_KEYWORDS.includes(searchName.toLowerCase().trim());
   let data;
@@ -467,6 +489,13 @@ export default {
     }
 
     const cardName = (url.searchParams.get("card") || "").trim();
+    const query = (url.searchParams.get("q") || "").trim();
+
+    if (url.pathname === "/api/autocomplete") {
+      if (!query) return jsonResponse({ error: "Missing 'q' parameter" }, 400);
+      const suggestions = await autocompleteCards(query);
+      return jsonResponse({ suggestions });
+    }
 
     if (url.pathname === "/api/preview") {
       if (!cardName) return jsonResponse({ error: "Missing 'card' parameter" }, 400);
@@ -535,6 +564,7 @@ export default {
       status: "ok",
       app: "MTG Token Printer Worker",
       endpoints: [
+        "/api/autocomplete?q=QUERY",
         "/api/preview?card=NAME",
         "/api/search?card=NAME",
         "/api/search/list?card=NAME",

@@ -4,38 +4,42 @@
 
 ```
 mtg_token_printer/
-├── public/                          # Arquivos web (GitHub Pages + Cloudflare Worker)
-│   ├── index.html                  # Página principal (busca de cartas)
-│   ├── momir.html                  # Página Momir (criaturas aleatórias)
-│   └── worker/                     # Cloudflare Worker backend
-│       ├── src/index.js            # Endpoints da API
-│       ├── wrangler.toml           # Configuração do Worker
-│       └── deploy-worker.sh        # Script de deploy
+├── index.html                      # Página principal (busca de cartas)
+├── momir.html                      # Página Momir (criaturas aleatórias)
 │
-├── local/                          # Arquivos para execução local (Python)
-│   ├── run.py                      # Script para rodar localmente
-│   ├── web_app.py                  # Flask app (não usado, substituído pelo Worker)
-│   ├── start.sh                    # Script de inicialização
-│   ├── requirements.txt            # Dependências Python
-│   └── src/                        # Módulos Python
-│       ├── base_printer.py         # Classe base para impressoras
-│       ├── thermer_layout.py       # Formatação para Thermer
-│       ├── mtg_layout.py           # Layouts de MTG
-│       ├── scryfall_fetcher.py     # Integração Scryfall
-│       └── archidekt_fetcher.py    # Integração Archidekt
+├── worker/                         # Cloudflare Worker backend
+│   ├── src/index.js               # Endpoints da API
+│   ├── wrangler.toml              # Configuração do Worker
+│   ├── package.json               # Dependências npm
+│   └── deploy-worker.sh           # Script de deploy
 │
-├── LICENSE                         # Licença MIT
-├── README.md                       # Documentação principal
-├── README_THERMER.md              # Documentação do Thermer
-├── TESTING.md                     # Guia de testes
-├── .nojekyll                      # Desabilita Jekyll no GitHub Pages
-├── snippet_code.py                # Código snippets/exemplos
-└── venv/                          # Ambiente virtual Python (não versionado)
+├── local/                         # Arquivos para execução local (Python)
+│   ├── run.py                     # Script para rodar localmente
+│   ├── web_app.py                 # Flask app (não usado, substituído pelo Worker)
+│   ├── start.sh                   # Script de inicialização
+│   ├── requirements.txt           # Dependências Python
+│   └── src/                       # Módulos Python
+│       ├── base_printer.py        # Classe base para impressoras
+│       ├── thermer_layout.py      # Formatação para Thermer
+│       ├── mtg_layout.py          # Layouts de MTG
+│       ├── scryfall_fetcher.py    # Integração Scryfall
+│       └── archidekt_fetcher.py   # Integração Archidekt
+│
+├── LICENSE                        # Licença MIT
+├── README.md                      # Documentação principal
+├── README_THERMER.md             # Documentação do Thermer
+├── TESTING.md                    # Guia de testes
+├── README_STRUCTURE.md           # Este arquivo (estrutura do projeto)
+├── .nojekyll                     # Desabilita Jekyll no GitHub Pages
+├── snippet_code.py               # Código snippets/exemplos
+└── venv/                         # Ambiente virtual Python (não versionado)
 ```
+
+---
 
 ## 🌐 Frontend (GitHub Pages + Cloudflare Worker)
 
-**Localização:** `public/`
+**Localização:** Root (`index.html`, `momir.html`) + `worker/`
 
 ### Arquivos Web:
 - **`index.html`** - Busca e impressão de cartas Magic
@@ -49,7 +53,9 @@ mtg_token_printer/
   - `/api/momir?cmc=X` - Criatura aleatória
   - `/api/momir/print?cmc=X` - Criatura com imagem
 
-**Deploy:** `cd public/worker && npx wrangler deploy`
+**Deploy Worker:** `cd worker && npx wrangler deploy`
+
+**GitHub Pages:** Automático ao fazer push (serve `index.html` e `momir.html` do root)
 
 ---
 
@@ -84,13 +90,13 @@ python run.py
 
 ### Frontend (GitHub Pages):
 ```bash
-# Arquivos HTML são automaticamente servidos do root public/
-git push
+# Arquivos HTML são automaticamente servidos da raiz
+git push origin main
 ```
 
 ### Backend (Cloudflare Worker):
 ```bash
-cd public/worker/
+cd worker/
 npx wrangler deploy
 # Ou use o script:
 ./deploy-worker.sh
