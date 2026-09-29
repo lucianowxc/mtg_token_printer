@@ -53,18 +53,25 @@
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
+            align-items: stretch;
         }
 
-        .input-group input {
+        .search-wrapper {
+            position: relative;
             flex: 1;
-            padding: 12px 16px;
+            min-width: 0;
+        }
+
+        .search-wrapper input {
+            width: 100%;
+            padding: 16px 20px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 18px;
             transition: border-color 0.3s;
         }
 
-        .input-group input:focus {
+        .search-wrapper input:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -84,10 +91,6 @@
             background: #5568d3;
         }
 
-        .search-wrapper {
-            position: relative;
-        }
-
         .autocomplete-list {
             display: none;
             position: absolute;
@@ -98,7 +101,7 @@
             border: 2px solid #667eea;
             border-top: none;
             border-radius: 0 0 8px 8px;
-            max-height: 300px;
+            max-height: 600px;
             overflow-y: auto;
             z-index: 100;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
@@ -116,8 +119,9 @@
             color: #555;
             transition: background 0.2s;
         }
-
-        .autocomplete-item:hover {
+        
+        .autocomplete-item:hover,
+        .autocomplete-item.active {
             background: #f0f4f8;
             color: #333;
         }
@@ -434,6 +438,39 @@
                 margin-top: 60px;
                 padding: 30px 0 40px 0;
             }
+
+            .input-group {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 15px;
+                align-items: stretch;
+            }
+
+            .search-wrapper {
+                position: relative;
+                flex: 1;
+                min-width: 0;
+            }
+
+            .search-wrapper input {
+                width: 100%;
+                padding: 12px 16px;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                font-size: 16px;
+                transition: border-color 0.3s;
+            }
+
+            #card-search {
+                width: 100%;
+                padding: 16px 20px;
+                font-size: 18px;
+            }
+
+            .search-wrapper input:focus {
+                outline: none;
+                border-color: #667eea;
+            }
         }
     </style>
 </head>
@@ -544,12 +581,112 @@
         // Se estiver rodando local (Flask), usa a própria origem.
         // Se estiver no GitHub Pages, aponta para o Cloudflare Worker.
         const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-            ? window.location.origin
+            ? "http://localhost:8787"
             : "https://mtg-token-printer-worker.luciano-wxc.workers.dev";
-
         let currentCard = null;
         let searchHistory = [];
+        // ===== Autocomplete =====
+        let autocompleteTimer = null;
+        let autocompleteController = null;
+        let autocompleteIndex = -1;
 
+        function showAutocomplete() {
+            const q = document.getElementById("card-search").value.trim();
+            clearTimeout(autocompleteTimer);
+
+            if (q.length < 2) {
+                hideAutocomplete();
+                return;
+            }
+
+            // debounce: espera 200ms depois da última tecla
+            autocompleteTimer = setTimeout(() => fetchSuggestions(q), 200);
+        }
+
+        async function fetchSuggestions(q) {
+            // cancela a requisição anterior para evitar respostas fora de ordem
+            if (autocompleteController) autocompleteController.abort();
+            autocompleteController = new AbortController();
+
+            try {
+                const res = await fetch(
+                    `${API_BASE}/api/autocomplete?q=${encodeURIComponent(q)}`,
+                    { signal: autocompleteController.signal }
+                );
+                if (!res.ok) return hideAutocomplete();
+
+                const data = await res.json();
+                renderAutocomplete(data.suggestions || []);
+            } catch (err) {
+                if (err.name !== "AbortError") hideAutocomplete();
+            }
+        }
+
+        function renderAutocomplete(suggestions) {
+            const list = document.getElementById("autocompleteList");
+            list.innerHTML = "";
+            autocompleteIndex = -1;
+
+            if (suggestions.length === 0) {
+                hideAutocomplete();
+                return;
+            }
+
+            suggestions.forEach((name) => {
+                const item = document.createElement("div");
+                item.className = "autocomplete-item";
+                item.textContent = name;
+                item.onclick = () => selectSuggestion(name);
+                list.appendChild(item);
+            });
+
+            list.classList.add("active");
+        }
+
+        function hideAutocomplete() {
+            clearTimeout(autocompleteTimer);
+            if (autocompleteController) autocompleteController.abort();
+            const list = document.getElementById("autocompleteList");
+            list.classList.remove("active");
+            list.innerHTML = "";
+            autocompleteIndex = -1;
+        }
+
+        function selectSuggestion(name) {
+            document.getElementById("card-search").value = name;
+            hideAutocomplete();
+            searchCard();
+        }
+
+        function handleAutocompleteKeydown(event) {
+            const list = document.getElementById("autocompleteList");
+            const items = list.querySelectorAll(".autocomplete-item");
+            const isOpen = list.classList.contains("active") && items.length > 0;
+
+            if (event.key === "Escape") {
+                hideAutocomplete();
+                return;
+            }
+
+            if (!isOpen) return;
+
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault();
+                const dir = event.key === "ArrowDown" ? 1 : -1;
+                autocompleteIndex = (autocompleteIndex + dir + items.length) % items.length;
+                items.forEach((el, i) => el.classList.toggle("active", i === autocompleteIndex));
+                items[autocompleteIndex].scrollIntoView({ block: "nearest" });
+            } else if (event.key === "Enter" && autocompleteIndex >= 0) {
+                // preventDefault também impede o listener de "keypress" de disparar searchCard() duas vezes
+                event.preventDefault();
+                /// selectSuggestion(items[autocompleteIndex].textContent);
+            }
+        }
+
+        // Fecha ao clicar fora
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".search-wrapper")) hideAutocomplete();
+        });
         // Load history from localStorage
         function loadHistory() {
             const saved = localStorage.getItem("mtg-history");
@@ -595,7 +732,7 @@
             const errorEl = document.getElementById("error-message");
             const loadingEl = document.getElementById("loading");
             const previewEl = document.getElementById("preview-section");
-
+            hideAutocomplete();
             errorEl.classList.remove("active");
             errorEl.textContent = "";
 

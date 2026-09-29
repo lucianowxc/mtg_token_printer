@@ -96,7 +96,7 @@ async function autocompleteCards(query) {
 
   try {
     const res = await fetch(
-      `https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`,
+      `https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}&include_extras=true`,
       { headers: SCRYFALL_HEADERS }
     );
     
@@ -494,7 +494,9 @@ export default {
     if (url.pathname === "/api/autocomplete") {
       if (!query) return jsonResponse({ error: "Missing 'q' parameter" }, 400);
       const suggestions = await autocompleteCards(query);
-      return jsonResponse({ suggestions });
+      const resp = jsonResponse({ suggestions });
+      resp.headers.set("Cache-Control", "public, max-age=3600");
+      return resp;
     }
 
     if (url.pathname === "/api/preview") {
