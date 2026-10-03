@@ -139,11 +139,25 @@ async function fetchCardData(searchName) {
   return formatCardInfo(data, searchName);
 }
 
+async function fetchCardDataById(cardId) {
+  if (!cardId) return null;
+
+  const res = await fetch(
+    `https://api.scryfall.com/cards/${encodeURIComponent(cardId)}`,
+    { headers: SCRYFALL_HEADERS }
+  );
+
+  if (!res.ok) return null;
+  const data = await res.json();
+  return formatCardInfo(data);
+}
+
 // Convert Scryfall card data to our standard format
 function formatCardInfo(data, searchName = null) {
   if (!data) return null;
 
   const cardInfo = {
+    id: data.id || null,
     name: data.name || "Unknown",
     type_line: data.type_line || "Token",
     rules_text: data.oracle_text || null,
@@ -272,6 +286,37 @@ function generateThermerJson(card) {
     content: footerLines.join("<br />"),
     bold: 1,
     align: card.pt ? 2 : 1,
+    format: 0,
+  });
+
+  return output;
+}
+
+function generateThermerImageOnlyJson(card) {
+  const output = [];
+
+  if (card.image_uris?.normal) {
+    output.push({
+      type: 1,
+      path: card.image_uris.normal,
+      align: 1,
+    });
+  }
+
+  if (card.scryfall_uri) {
+    output.push({
+      type: 3,
+      value: card.scryfall_uri,
+      size: DEFAULT_QR_SIZE_MM,
+      align: 2,
+    });
+  }
+
+  output.push({
+    type: 0,
+    content: " <br /> ",
+    bold: 0,
+    align: 1,
     format: 0,
   });
 
@@ -488,7 +533,8 @@ export default {
       return new Response(null, { headers: CORS_HEADERS });
     }
 
-    const cardName = (url.searchParams.get("card") || "").trim();
+  const cardName = (url.searchParams.get("card") || "").trim();
+  const cardId = (url.searchParams.get("id") || "").trim();
     const query = (url.searchParams.get("q") || "").trim();
 
     if (url.pathname === "/api/autocomplete") {
@@ -503,6 +549,13 @@ export default {
       if (!cardName) return jsonResponse({ error: "Missing 'card' parameter" }, 400);
       const card = await fetchCardData(cardName);
       if (!card) return jsonResponse({ error: `Card not found: ${cardName}` }, 404);
+      return jsonResponse(card);
+    }
+
+    if (url.pathname === "/api/preview/by-id") {
+      if (!cardId) return jsonResponse({ error: "Missing 'id' parameter" }, 400);
+      const card = await fetchCardDataById(cardId);
+      if (!card) return jsonResponse({ error: `Card not found: ${cardId}` }, 404);
       return jsonResponse(card);
     }
 
@@ -524,6 +577,7 @@ export default {
         const cardInfo = formatCardInfo(data, cardName);
         return {
           id: index,
+          card_id: cardInfo.id,
           name: cardInfo.name,
           type_line: cardInfo.type_line,
           pt: cardInfo.pt,
@@ -542,6 +596,30 @@ export default {
       const card = await fetchCardData(cardName);
       if (!card) return jsonResponse({ error: `Card not found: ${cardName}` }, 404);
       const thermerArray = generateThermerJsonWithImage(card);
+      return jsonResponse(toForcedObject(thermerArray));
+    }
+
+    if (url.pathname === "/api/search/by-id") {
+      if (!cardId) return jsonResponse({ error: "Missing 'id' parameter" }, 400);
+      const card = await fetchCardDataById(cardId);
+      if (!card) return jsonResponse({ error: `Card not found: ${cardId}` }, 404);
+      const thermerArray = generateThermerJson(card);
+      return jsonResponse(toForcedObject(thermerArray));
+    }
+
+    if (url.pathname === "/api/search/print/by-id") {
+      if (!cardId) return jsonResponse({ error: "Missing 'id' parameter" }, 400);
+      const card = await fetchCardDataById(cardId);
+      if (!card) return jsonResponse({ error: `Card not found: ${cardId}` }, 404);
+      const thermerArray = generateThermerJsonWithImage(card);
+      return jsonResponse(toForcedObject(thermerArray));
+    }
+
+    if (url.pathname === "/api/search/image/by-id") {
+      if (!cardId) return jsonResponse({ error: "Missing 'id' parameter" }, 400);
+      const card = await fetchCardDataById(cardId);
+      if (!card) return jsonResponse({ error: `Card not found: ${cardId}` }, 404);
+      const thermerArray = generateThermerImageOnlyJson(card);
       return jsonResponse(toForcedObject(thermerArray));
     }
 
@@ -568,9 +646,13 @@ export default {
       endpoints: [
         "/api/autocomplete?q=QUERY",
         "/api/preview?card=NAME",
+        "/api/preview/by-id?id=CARD_ID",
         "/api/search?card=NAME",
         "/api/search/list?card=NAME",
+        "/api/search/by-id?id=CARD_ID",
         "/api/search/print?card=NAME",
+        "/api/search/print/by-id?id=CARD_ID",
+        "/api/search/image/by-id?id=CARD_ID",
         "/api/momir?cmc=X",
         "/api/momir/print?cmc=X"
       ],

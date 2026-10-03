@@ -277,6 +277,21 @@
             flex: 1;
         }
 
+        .android-hint {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            color: #9a3412;
+            font-size: 12px;
+        }
+
+        .android-hint.active {
+            display: block;
+        }
+
         .history-section {
             background: white;
             border-radius: 16px;
@@ -538,6 +553,11 @@
                 <label for="includeImageCheckbox">🖼️ Incluir Imagem na Impressão</label>
             </div>
 
+            <div class="image-option">
+                <input type="checkbox" id="imageOnlyCheckbox">
+                <label for="imageOnlyCheckbox">🖼️ Somente Imagem (Scryfall)</label>
+            </div>
+
             <div class="print-button-group">
                 <a
                     href="#"
@@ -554,6 +574,10 @@
 
             <div class="hint">
                 📱 Clique em "Imprimir com Thermer" para enviar à impressora. Certifique-se de que o app Thermer está instalado no seu dispositivo (iOS ou Android)!
+            </div>
+
+            <div class="android-hint" id="androidThermerHint">
+                ⚠️ Se o app não abrir automaticamente no Android, abra o Thermer manualmente e tente novamente.
             </div>
         </div>
 
@@ -679,7 +703,11 @@
             } else if (event.key === "Enter" && autocompleteIndex >= 0) {
                 // preventDefault também impede o listener de "keypress" de disparar searchCard() duas vezes
                 event.preventDefault();
-                /// selectSuggestion(items[autocompleteIndex].textContent);
+                selectSuggestion(items[autocompleteIndex].textContent);
+            } else if (event.key === "Enter" && items.length > 0) {
+                // Se não houver item destacado, escolhe o primeiro
+                event.preventDefault();
+                selectSuggestion(items[0].textContent);
             }
         }
 
@@ -762,8 +790,12 @@
 
                 // If only one result, show it directly
                 if (listData.results.length === 1) {
-                    // Get full data for single result
-                    const response = await fetch(`${API_BASE}/api/preview?card=${encodeURIComponent(listData.results[0].name)}`);
+                    // Get full data for single result (prefer card_id to avoid ambiguity)
+                    const single = listData.results[0];
+                    const previewUrl = single.card_id
+                        ? `${API_BASE}/api/preview/by-id?id=${encodeURIComponent(single.card_id)}`
+                        : `${API_BASE}/api/preview?card=${encodeURIComponent(single.name)}`;
+                    const response = await fetch(previewUrl);
                     const data = await response.json();
                     currentCard = data;
                     updatePreview(data);
@@ -788,7 +820,7 @@
             results.forEach((card, index) => {
                 const div = document.createElement("div");
                 div.className = "card-option";
-                div.onclick = () => selectCardFromList(card.name);
+                div.onclick = () => selectCardFromList(card);
                 
                 const name = document.createElement("div");
                 name.className = "card-option-name";
@@ -814,9 +846,12 @@
             document.getElementById("selectionModal").classList.remove("active");
         }
 
-        async function selectCardFromList(cardName) {
+        async function selectCardFromList(card) {
             try {
-                const response = await fetch(`${API_BASE}/api/preview?card=${encodeURIComponent(cardName)}`);
+                const previewUrl = card.card_id
+                    ? `${API_BASE}/api/preview/by-id?id=${encodeURIComponent(card.card_id)}`
+                    : `${API_BASE}/api/preview?card=${encodeURIComponent(card.name)}`;
+                const response = await fetch(previewUrl);
                 const data = await response.json();
 
                 if (!response.ok) {
@@ -874,27 +909,51 @@
             if (!currentCard) return;
 
             const includeImage = document.getElementById('includeImageCheckbox').checked;
+            const imageOnly = document.getElementById('imageOnlyCheckbox').checked;
+            const hasCardId = !!currentCard.id;
 
-            // Choose endpoint based on checkbox
-            const endpoint = includeImage 
-                ? `${API_BASE}/api/search/print?card=${encodeURIComponent(currentCard.name)}`
-                : `${API_BASE}/api/search?card=${encodeURIComponent(currentCard.name)}`;
+            // Choose endpoint based on options (prefer ID endpoints to keep token variant)
+            let endpoint;
+            if (imageOnly) {
+                endpoint = hasCardId
+                    ? `${API_BASE}/api/search/image/by-id?id=${encodeURIComponent(currentCard.id)}`
+                    : `${API_BASE}/api/search/print?card=${encodeURIComponent(currentCard.name)}`;
+            } else if (includeImage) {
+                endpoint = hasCardId
+                    ? `${API_BASE}/api/search/print/by-id?id=${encodeURIComponent(currentCard.id)}`
+                    : `${API_BASE}/api/search/print?card=${encodeURIComponent(currentCard.name)}`;
+            } else {
+                endpoint = hasCardId
+                    ? `${API_BASE}/api/search/by-id?id=${encodeURIComponent(currentCard.id)}`
+                    : `${API_BASE}/api/search?card=${encodeURIComponent(currentCard.name)}`;
+            }
 
             // Thermer uses the bprint:// protocol
             window.location.href = `bprint://${endpoint}`;
+
+            // Android-only non-invasive hint (does not alter iOS behavior)
+            const isAndroid = /Android/i.test(navigator.userAgent || "");
+            if (isAndroid) {
+                const hint = document.getElementById("androidThermerHint");
+                setTimeout(() => {
+                    if (hint) hint.classList.add("active");
+                }, 1400);
+            }
         }
 
         function clearPreview() {
             document.getElementById("card-search").value = "";
             document.getElementById("preview-section").classList.remove("active");
+            document.getElementById("androidThermerHint").classList.remove("active");
             currentCard = null;
         }
 
         // Enter key to search
         document.addEventListener("DOMContentLoaded", () => {
             loadHistory();
-            document.getElementById("card-search").addEventListener("keypress", (e) => {
-                if (e.key === "Enter") {
+            document.getElementById("card-search").addEventListener("keydown", (e) => {
+                // Só busca com Enter se o autocomplete não consumiu o evento
+                if (e.key === "Enter" && !e.defaultPrevented) {
                     searchCard();
                 }
             });
