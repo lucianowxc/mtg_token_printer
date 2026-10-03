@@ -452,6 +452,7 @@
     <script src="shared-layout.js"></script>
     <script src="shared-print.js"></script>
     <script src="shared-i18n.js"></script>
+    <script src="shared-card-normalizer.js"></script>
     <script>
         const API_BASE = 'https://mtg-token-printer-worker.luciano-wxc.workers.dev';
         const I18N = {
@@ -581,40 +582,39 @@
 
         function displayCreature(creature) {
             const section = document.getElementById('creatureSection');
+            const view = MTGCardNormalizer.normalizeMomirCard(creature, {
+                colorlessLabel: t('colorless'),
+                notAvailableLabel: t('notAvailable'),
+            });
 
             // Image
-            const imageUrl = creature.image_uris?.normal
-                || creature.image_uris?.large
-                || creature.image_uris?.small
-                || (creature.id ? `https://api.scryfall.com/cards/${encodeURIComponent(creature.id)}?format=image&version=normal` : '');
-            document.getElementById('creatureImage').src = imageUrl;
-            document.getElementById('creatureImage').style.display = imageUrl ? 'block' : 'none';
+            document.getElementById('creatureImage').src = view.imageUrl || '';
+            document.getElementById('creatureImage').style.display = view.imageUrl ? 'block' : 'none';
 
             // Name
-            document.getElementById('creatureName').textContent = creature.name;
+            document.getElementById('creatureName').textContent = view.name;
 
             // Type
-            document.getElementById('creatureType').textContent = creature.type_line || t('notAvailable');
+            document.getElementById('creatureType').textContent = view.typeLine;
 
             // CMC
-            document.getElementById('creatureCMC').textContent = creature.cmc || '0';
+            document.getElementById('creatureCMC').textContent = view.manaValue ?? '0';
 
             // Colors
-            const colors = (creature.colors || []).join(', ') || t('colorless');
-            document.getElementById('creatureColors').textContent = colors;
+            document.getElementById('creatureColors').textContent = view.colorsText || t('colorless');
 
             // Oracle text
             const textContainer = document.getElementById('creatureTextContainer');
             textContainer.innerHTML = '';
-            if (creature.oracle_text) {
+            if (view.rulesText) {
                 const textEl = document.createElement('div');
                 textEl.className = 'creature-text';
-                textEl.textContent = creature.oracle_text;
+                textEl.textContent = view.rulesText;
                 textContainer.appendChild(textEl);
             }
 
             // Scryfall link
-            document.getElementById('scryfallLink').href = creature.scryfall_uri || '#';
+            document.getElementById('scryfallLink').href = view.scryfallUrl || '#';
 
             // Store current creature for printing
             currentCreature = creature;

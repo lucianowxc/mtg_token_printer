@@ -17,6 +17,7 @@ describe("momir.html", () => {
     expect(scripts).toContain("shared-layout.js");
     expect(scripts).toContain("shared-print.js");
     expect(scripts).toContain("shared-i18n.js");
+  expect(scripts).toContain("shared-card-normalizer.js");
 
     const footer = document.querySelector(".footer[data-shared-footer='true']");
     expect(footer).not.toBeNull();

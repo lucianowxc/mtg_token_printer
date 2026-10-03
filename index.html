@@ -562,6 +562,7 @@
     <script src="shared-layout.js"></script>
     <script src="shared-print.js"></script>
     <script src="shared-i18n.js"></script>
+    <script src="shared-card-normalizer.js"></script>
     <script>
         // Se estiver rodando local (Flask), usa a própria origem.
         // Se estiver no GitHub Pages, aponta para o Cloudflare Worker.
@@ -953,42 +954,38 @@
         }
 
         function updatePreview(card) {
+            const view = MTGCardNormalizer.normalizeIndexCard(card, {
+                notAvailableLabel: t("cardNotFound"),
+            });
+
             const previewImage = document.getElementById("preview-image");
-            const imageUrl = card.image_uris?.normal
-                || card.image_uris?.large
-                || card.image_uris?.small
-                || (card.id ? `https://api.scryfall.com/cards/${encodeURIComponent(card.id)}?format=image&version=normal` : "");
-            previewImage.src = imageUrl;
-            previewImage.style.display = imageUrl ? "block" : "none";
+            previewImage.src = view.imageUrl || "";
+            previewImage.style.display = view.imageUrl ? "block" : "none";
 
-            document.getElementById("preview-name").textContent = card.name;
-            document.getElementById("preview-type").textContent = card.type_line;
-
-            const manaText = card.mana_cost
-                ? `${card.mana_cost} (MV: ${card.mana_value || 0})`
-                : `MV: ${card.mana_value || 0}`;
-            document.getElementById("preview-mana").textContent = manaText;
+            document.getElementById("preview-name").textContent = view.name;
+            document.getElementById("preview-type").textContent = view.typeLine;
+            document.getElementById("preview-mana").textContent = view.manaText || "-";
 
             // Rules text
             const rulesEl = document.getElementById("preview-rules");
-            if (card.rules_text) {
-                rulesEl.innerHTML = `<div class="card-text"><strong>${t("rulesLabel")}:</strong><br/>${card.rules_text}</div>`;
+            if (view.rulesText) {
+                rulesEl.innerHTML = `<div class="card-text"><strong>${t("rulesLabel")}:</strong><br/>${view.rulesText}</div>`;
             } else {
                 rulesEl.innerHTML = "";
             }
 
             // Flavor text
             const flavorEl = document.getElementById("preview-flavor");
-            if (card.flavor_text) {
-                flavorEl.innerHTML = `<div class="card-text"><em>${card.flavor_text}</em></div>`;
+            if (view.flavorText) {
+                flavorEl.innerHTML = `<div class="card-text"><em>${view.flavorText}</em></div>`;
             } else {
                 flavorEl.innerHTML = "";
             }
 
             // P/T
             const ptContainer = document.getElementById("preview-pt-container");
-            if (card.pt) {
-                document.getElementById("preview-pt").textContent = card.pt;
+            if (view.pt) {
+                document.getElementById("preview-pt").textContent = view.pt;
                 ptContainer.style.display = "block";
             } else {
                 ptContainer.style.display = "none";
