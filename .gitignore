@@ -1,6 +1,7 @@
 venv/
 __pycache__/
 *.pyc
+node_modules/
 worker/node_modules/
 worker/.wrangler/
 .env

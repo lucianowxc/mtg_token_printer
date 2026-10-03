@@ -1,5 +1,33 @@
 # ⚡ Quick Test - MTG Token Printer
 
+## ✅ Testes automatizados (frontend + backend)
+
+Esta suíte cobre:
+- **Backend Worker**: validação de endpoints, erros de parâmetros e formato de payload Thermer.
+- **Frontend compartilhado**: `shared-print.js`, `shared-i18n.js` e `shared-layout.js`.
+
+### Rodar a suíte
+
+```bash
+cd ~/thermal_printer_playground/mtg_token_printer
+npm install
+npm test
+```
+
+### Estrutura dos testes
+
+- `tests/backend/worker.api.test.js`
+- `tests/frontend/shared-print.test.js`
+- `tests/frontend/shared-i18n.test.js`
+- `tests/frontend/shared-layout.test.js`
+
+### Modo watch (desenvolvimento)
+
+```bash
+cd ~/thermal_printer_playground/mtg_token_printer
+npm run test:watch
+```
+
 ## Setup (primeira vez)
 ```bash
 cd ~/thermal_printer_playground/mtg_token_printer
