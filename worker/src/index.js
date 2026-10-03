@@ -27,10 +27,29 @@ const DEFAULT_QR_SIZE_MM = 120;
 // Search for multiple card results with smart ranking
 async function searchCards(searchName) {
   const isGenericToken = TOKEN_KEYWORDS.includes(searchName.toLowerCase().trim());
+  let isTokenSearch = false;
   let results = [];
 
   try {
-    if (isGenericToken) {
+    // 1) Try token-focused search first for any term.
+    // This keeps token workflows accurate for names like "pest", "spider", etc.
+    const tokenQuery = `t:token ${searchName}`;
+    const tokenRes = await fetch(
+      `https://api.scryfall.com/cards/search?q=${encodeURIComponent(tokenQuery)}&order=released&dir=desc`,
+      { headers: SCRYFALL_HEADERS }
+    );
+
+    if (tokenRes.ok) {
+      const tokenJson = await tokenRes.json();
+      const tokenResults = tokenJson.data || [];
+      if (tokenResults.length > 0) {
+        results = tokenResults;
+        isTokenSearch = true;
+      }
+    }
+
+    // 2) Fallback to previous behavior if token query returns nothing.
+    if (results.length === 0 && isGenericToken) {
       const query = `t:token ${searchName}`;
       const res = await fetch(
         `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=released&dir=desc`,
@@ -40,7 +59,7 @@ async function searchCards(searchName) {
         const json = await res.json();
         results = json.data || [];
       }
-    } else {
+    } else if (results.length === 0) {
       // Try exact match first
       const exactRes = await fetch(
         `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(searchName)}`,
@@ -85,6 +104,34 @@ async function searchCards(searchName) {
     }
   } catch (e) {
     // Silently fail and return empty results
+  }
+
+  // For generic token searches, keep only functionally distinct variants.
+  // This prevents many reprints of the same token from flooding the list.
+  if ((isGenericToken || isTokenSearch) && results.length > 0) {
+    const unique = [];
+    const seen = new Set();
+
+    for (const data of results) {
+      const cardInfo = formatCardInfo(data, searchName);
+      if (!cardInfo) continue;
+
+      const signature = [
+        (cardInfo.name || "").toLowerCase().trim(),
+        (cardInfo.type_line || "").toLowerCase().trim(),
+        (cardInfo.pt || "").toLowerCase().trim(),
+        (cardInfo.rules_text || "").toLowerCase().trim(),
+      ].join("|");
+
+      if (!seen.has(signature)) {
+        seen.add(signature);
+        unique.push(data);
+      }
+
+      if (unique.length >= 8) break;
+    }
+
+    results = unique;
   }
 
   return results;
