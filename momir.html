@@ -583,7 +583,10 @@
             const section = document.getElementById('creatureSection');
 
             // Image
-            const imageUrl = creature.image_uris?.normal || creature.image_uris?.large || '';
+            const imageUrl = creature.image_uris?.normal
+                || creature.image_uris?.large
+                || creature.image_uris?.small
+                || (creature.id ? `https://api.scryfall.com/cards/${encodeURIComponent(creature.id)}?format=image&version=normal` : '');
             document.getElementById('creatureImage').src = imageUrl;
             document.getElementById('creatureImage').style.display = imageUrl ? 'block' : 'none';
 

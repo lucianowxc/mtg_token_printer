@@ -136,4 +136,38 @@ describe("Worker API", () => {
     expect(response.status).toBe(400);
     expect(body.error).toMatch("Missing 'id' parameter");
   });
+
+  it("uses card face image_uris when top-level image_uris is missing", async () => {
+    global.fetch = vi.fn(async (url) => {
+      if (String(url).includes("/cards/named?fuzzy=")) {
+        return jsonResponse({
+          id: "face-card-1",
+          name: "Test Front // Back",
+          type_line: "Creature",
+          oracle_text: "Front text",
+          cmc: 3,
+          image_uris: null,
+          card_faces: [
+            {
+              name: "Test Front",
+              type_line: "Creature — Wizard",
+              oracle_text: "Front text",
+              image_uris: {
+                normal: "https://cards.scryfall.io/normal/front/test.jpg",
+              },
+            },
+          ],
+        });
+      }
+
+      return jsonResponse({ object: "error" }, 404);
+    });
+
+    const request = new Request("https://example.com/api/preview?card=Test%20Front");
+    const response = await worker.fetch(request);
+    const body = await readJson(response);
+
+    expect(response.status).toBe(200);
+    expect(body.image_uris?.normal).toBe("https://cards.scryfall.io/normal/front/test.jpg");
+  });
 });

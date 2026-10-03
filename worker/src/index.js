@@ -237,6 +237,12 @@ function formatCardInfo(data, searchName = null) {
     if (targetFace.power && targetFace.toughness) {
       cardInfo.pt = `${targetFace.power}/${targetFace.toughness}`;
     }
+
+    // Some cards (e.g. modal/double-faced) may not have top-level image_uris.
+    // In that case, use the matched face image as preview source.
+    if (!cardInfo.image_uris && targetFace.image_uris) {
+      cardInfo.image_uris = targetFace.image_uris;
+    }
   }
 
   return cardInfo;
