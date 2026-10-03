@@ -387,6 +387,24 @@
             margin: 4px 0;
         }
 
+        .lang-switch {
+            margin-top: 12px;
+        }
+
+        .lang-switch select {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .lang-switch select option {
+            color: #111827;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 15px;
@@ -434,47 +452,53 @@
     <div class="container">
         <div class="header">
             <h1>⚡ Momir Vig</h1>
-            <p>Random Creature Generator</p>
+            <p data-i18n="subtitle">Random Creature Generator</p>
+            <div class="lang-switch">
+                <select id="languageSelect" aria-label="Language selector">
+                    <option value="pt-BR">Português (BR)</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
         </div>
 
         <div class="nav-links">
-            <a href="index.html">← Voltar</a>
+            <a href="index.html" data-i18n="backLink">← Voltar</a>
         </div>
 
         <div class="control-section">
             <div class="error" id="error"></div>
 
             <div class="cmc-selector">
-                <label>Selecione o Custo de Mana (CMC):</label>
+                <label data-i18n="cmcLabel">Selecione o Custo de Mana (CMC):</label>
                 <div class="cmc-buttons" id="cmcButtons"></div>
             </div>
 
             <div class="surprise-mode">
                 <input type="checkbox" id="surpriseModeCheckbox">
-                <label for="surpriseModeCheckbox">🎁 Modo Surpresa (não revelar antes de imprimir)</label>
+                <label for="surpriseModeCheckbox" data-i18n="surpriseMode">🎁 Modo Surpresa (não revelar antes de imprimir)</label>
             </div>
 
             <div class="image-option">
                 <input type="checkbox" id="includeImageCheckbox">
-                <label for="includeImageCheckbox">🖼️ Incluir Imagem na Impressão</label>
+                <label for="includeImageCheckbox" data-i18n="includeImage">🖼️ Incluir Imagem na Impressão</label>
             </div>
 
-            <div class="loading" id="loading">
+            <div class="loading" id="loading" data-i18n="loading">
                 ⏳ Buscando criatura aleatória...
             </div>
 
-            <button class="generate-btn" id="generateBtn" disabled>
+            <button class="generate-btn" id="generateBtn" disabled data-i18n="generateBtn">
                 Gerar Criatura
             </button>
         </div>
 
         <div class="surprise-section" id="surpriseSection">
-            <div class="surprise-message">🎁 Criatura sorteada!</div>
-            <p style="color: #666; margin-bottom: 20px; font-size: 14px;">A criatura está pronta. Clique em "Imprimir Surpresa" para revelar ao grupo!</p>
+            <div class="surprise-message" data-i18n="surpriseTitle">🎁 Criatura sorteada!</div>
+            <p id="surpriseDescription" style="color: #666; margin-bottom: 20px; font-size: 14px;" data-i18n="surpriseDescription">A criatura está pronta. Clique em "Imprimir Surpresa" para revelar ao grupo!</p>
 
             <div class="surprise-buttons">
-                <button class="print-surprise" id="printSurpriseBtn">🖨️ Imprimir Surpresa</button>
-                <button class="reveal-btn" id="revealBtn">👁️ Revelar</button>
+                <button class="print-surprise" id="printSurpriseBtn" data-i18n="printSurpriseBtn">🖨️ Imprimir Surpresa</button>
+                <button class="reveal-btn" id="revealBtn" data-i18n="revealBtn">👁️ Revelar</button>
             </div>
         </div>
 
@@ -484,26 +508,26 @@
             <div class="creature-name" id="creatureName"></div>
 
             <div class="creature-stat">
-                <span class="label">Tipo:</span>
+                <span class="label" data-i18n="labelType">Tipo:</span>
                 <span id="creatureType"></span>
             </div>
 
             <div class="creature-stat">
-                <span class="label">Custo de Mana:</span>
+                <span class="label" data-i18n="labelCMC">Custo de Mana:</span>
                 <span id="creatureCMC"></span>
             </div>
 
             <div class="creature-stat">
-                <span class="label">Cores:</span>
+                <span class="label" data-i18n="labelColors">Cores:</span>
                 <span id="creatureColors"></span>
             </div>
 
             <div id="creatureTextContainer"></div>
 
             <div class="action-buttons">
-                <button class="action-btn thermer" id="printBtn">🖨️ Imprimir</button>
-                <a class="action-btn scryfall" id="scryfallLink" target="_blank">Ver no Scryfall</a>
-                <button class="action-btn again" id="againBtn">Gerar Outra</button>
+                <button class="action-btn thermer" id="printBtn" data-i18n="printBtn">🖨️ Imprimir</button>
+                <a class="action-btn scryfall" id="scryfallLink" target="_blank" data-i18n="viewScryfall">Ver no Scryfall</a>
+                <button class="action-btn again" id="againBtn" data-i18n="generateAnother">Gerar Outra</button>
             </div>
         </div>
 
@@ -516,6 +540,77 @@
 
     <script>
         const API_BASE = 'https://mtg-token-printer-worker.luciano-wxc.workers.dev';
+        const I18N = {
+            "pt-BR": {
+                subtitle: "Random Creature Generator",
+                backLink: "← Voltar",
+                cmcLabel: "Selecione o Custo de Mana (CMC):",
+                surpriseMode: "🎁 Modo Surpresa (não revelar antes de imprimir)",
+                includeImage: "🖼️ Incluir Imagem na Impressão",
+                loading: "⏳ Buscando criatura aleatória...",
+                generateBtn: "Gerar Criatura",
+                surpriseTitle: "🎁 Criatura sorteada!",
+                surpriseDescription: "A criatura está pronta. Clique em \"Imprimir Surpresa\" para revelar ao grupo!",
+                printSurpriseBtn: "🖨️ Imprimir Surpresa",
+                revealBtn: "👁️ Revelar",
+                labelType: "Tipo:",
+                labelCMC: "Custo de Mana:",
+                labelColors: "Cores:",
+                printBtn: "🖨️ Imprimir",
+                viewScryfall: "Ver no Scryfall",
+                generateAnother: "Gerar Outra",
+                errorFetchCreature: "Erro ao buscar criatura",
+                colorless: "Incolor",
+                notAvailable: "N/D"
+            },
+            en: {
+                subtitle: "Random Creature Generator",
+                backLink: "← Back",
+                cmcLabel: "Select Mana Value (CMC):",
+                surpriseMode: "🎁 Surprise Mode (do not reveal before printing)",
+                includeImage: "🖼️ Include image in print",
+                loading: "⏳ Fetching random creature...",
+                generateBtn: "Generate Creature",
+                surpriseTitle: "🎁 Creature generated!",
+                surpriseDescription: "Your creature is ready. Tap \"Print Surprise\" to reveal it to the group!",
+                printSurpriseBtn: "🖨️ Print Surprise",
+                revealBtn: "👁️ Reveal",
+                labelType: "Type:",
+                labelCMC: "Mana Value:",
+                labelColors: "Colors:",
+                printBtn: "🖨️ Print",
+                viewScryfall: "View on Scryfall",
+                generateAnother: "Generate Another",
+                errorFetchCreature: "Error fetching creature",
+                colorless: "Colorless",
+                notAvailable: "N/A"
+            }
+        };
+        let currentLang = localStorage.getItem("mtg-lang") || "pt-BR";
+
+        function t(key) {
+            return I18N[currentLang]?.[key] ?? I18N["pt-BR"][key] ?? key;
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll("[data-i18n]").forEach((el) => {
+                const key = el.dataset.i18n;
+                const value = t(key);
+                if (value) el.textContent = value;
+            });
+        }
+
+        function setupLanguageSelector() {
+            const select = document.getElementById("languageSelect");
+            if (!select) return;
+            select.value = currentLang;
+            select.addEventListener("change", (e) => {
+                currentLang = e.target.value;
+                localStorage.setItem("mtg-lang", currentLang);
+                applyTranslations();
+            });
+        }
+
         let selectedCMC = null;
         let currentCreature = null;
         let lastUsedCMC = null;
@@ -562,7 +657,7 @@
                 );
 
                 if (!response.ok) {
-                    throw new Error(`Erro ao buscar criatura: ${response.status}`);
+                    throw new Error(`${t("errorFetchCreature")}: ${response.status}`);
                 }
 
                 const creature = await response.json();
@@ -598,13 +693,13 @@
             document.getElementById('creatureName').textContent = creature.name;
 
             // Type
-            document.getElementById('creatureType').textContent = creature.type_line || 'N/A';
+            document.getElementById('creatureType').textContent = creature.type_line || t('notAvailable');
 
             // CMC
             document.getElementById('creatureCMC').textContent = creature.cmc || '0';
 
             // Colors
-            const colors = (creature.colors || []).join(', ') || 'Incolor';
+            const colors = (creature.colors || []).join(', ') || t('colorless');
             document.getElementById('creatureColors').textContent = colors;
 
             // Oracle text
@@ -667,6 +762,9 @@
         document.getElementById('printBtn').addEventListener('click', printWithThermer);
         document.getElementById('printSurpriseBtn').addEventListener('click', printSurprise);
         document.getElementById('revealBtn').addEventListener('click', revealSurprise);
+
+    setupLanguageSelector();
+    applyTranslations();
 
         // Initialize
         initCMCButtons();
