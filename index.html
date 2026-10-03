@@ -484,6 +484,8 @@
         </div>
 
         <div class="preview-section" id="preview-section">
+            <img class="card-preview-image" id="preview-image" src="" alt="Card art" style="display: none;">
+
             <div class="card-name" id="preview-name"></div>
 
             <div class="card-stat">
@@ -951,6 +953,11 @@
         }
 
         function updatePreview(card) {
+            const previewImage = document.getElementById("preview-image");
+            const imageUrl = card.image_uris?.normal || card.image_uris?.large || card.image_uris?.small || "";
+            previewImage.src = imageUrl;
+            previewImage.style.display = imageUrl ? "block" : "none";
+
             document.getElementById("preview-name").textContent = card.name;
             document.getElementById("preview-type").textContent = card.type_line;
 
@@ -1009,6 +1016,9 @@
         function clearPreview() {
             document.getElementById("card-search").value = "";
             document.getElementById("preview-section").classList.remove("active");
+            const previewImage = document.getElementById("preview-image");
+            previewImage.style.display = "none";
+            previewImage.src = "";
             MTGPrint.clearAndroidHint("androidThermerHint");
             currentCard = null;
         }
