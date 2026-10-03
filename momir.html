@@ -483,6 +483,11 @@
                 <label for="includeImageCheckbox" data-i18n="includeImage">🖼️ Incluir Imagem na Impressão</label>
             </div>
 
+            <div class="image-option">
+                <input type="checkbox" id="imageOnlyCheckbox">
+                <label for="imageOnlyCheckbox" data-i18n="imageOnly">🖼️ Somente Imagem (Scryfall)</label>
+            </div>
+
             <div class="loading" id="loading" data-i18n="loading">
                 ⏳ Buscando criatura aleatória...
             </div>
@@ -538,6 +543,7 @@
         </div>
     </div>
 
+    <script src="shared-print.js"></script>
     <script>
         const API_BASE = 'https://mtg-token-printer-worker.luciano-wxc.workers.dev';
         const I18N = {
@@ -547,6 +553,7 @@
                 cmcLabel: "Selecione o Custo de Mana (CMC):",
                 surpriseMode: "🎁 Modo Surpresa (não revelar antes de imprimir)",
                 includeImage: "🖼️ Incluir Imagem na Impressão",
+                imageOnly: "🖼️ Somente Imagem (Scryfall)",
                 loading: "⏳ Buscando criatura aleatória...",
                 generateBtn: "Gerar Criatura",
                 surpriseTitle: "🎁 Criatura sorteada!",
@@ -569,6 +576,7 @@
                 cmcLabel: "Select Mana Value (CMC):",
                 surpriseMode: "🎁 Surprise Mode (do not reveal before printing)",
                 includeImage: "🖼️ Include image in print",
+                imageOnly: "🖼️ Image only (Scryfall)",
                 loading: "⏳ Fetching random creature...",
                 generateBtn: "Generate Creature",
                 surpriseTitle: "🎁 Creature generated!",
@@ -722,17 +730,20 @@
         }
 
         function printWithThermer() {
-            if (!currentCreature || lastUsedCMC === null) return;
+            if (!currentCreature) return;
 
             const includeImage = document.getElementById('includeImageCheckbox').checked;
+            const imageOnly = document.getElementById('imageOnlyCheckbox').checked;
             
-            // Choose endpoint based on checkbox
-            const endpoint = includeImage 
-                ? `${API_BASE}/api/momir/print?cmc=${lastUsedCMC}`
-                : `${API_BASE}/api/search?card=${encodeURIComponent(currentCreature.name)}`;
+            const endpoint = MTGPrint.resolveCardPrintEndpoint({
+                apiBase: API_BASE,
+                cardId: currentCreature.id,
+                cardName: currentCreature.name,
+                includeImage,
+                imageOnly,
+            });
 
-            // Thermer uses the bprint:// protocol
-            window.location.href = `bprint://${endpoint}`;
+            MTGPrint.launchThermerPrint({ endpoint });
         }
 
         function revealSurprise() {
@@ -744,16 +755,20 @@
         }
 
         function printSurprise() {
-            if (!currentCreature || lastUsedCMC === null) return;
+            if (!currentCreature) return;
             
             const includeImage = document.getElementById('includeImageCheckbox').checked;
+            const imageOnly = document.getElementById('imageOnlyCheckbox').checked;
             
-            // Choose endpoint based on checkbox
-            const endpoint = includeImage 
-                ? `${API_BASE}/api/momir/print?cmc=${lastUsedCMC}`
-                : `${API_BASE}/api/search?card=${encodeURIComponent(currentCreature.name)}`;
-            
-            window.location.href = `bprint://${endpoint}`;
+            const endpoint = MTGPrint.resolveCardPrintEndpoint({
+                apiBase: API_BASE,
+                cardId: currentCreature.id,
+                cardName: currentCreature.name,
+                includeImage,
+                imageOnly,
+            });
+
+            MTGPrint.launchThermerPrint({ endpoint });
         }
 
         // Event listeners

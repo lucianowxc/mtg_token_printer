@@ -647,6 +647,7 @@
         </div>
     </div>
 
+    <script src="shared-print.js"></script>
     <script>
         // Se estiver rodando local (Flask), usa a própria origem.
         // Se estiver no GitHub Pages, aponta para o Cloudflare Worker.
@@ -1102,41 +1103,24 @@
 
             const includeImage = document.getElementById('includeImageCheckbox').checked;
             const imageOnly = document.getElementById('imageOnlyCheckbox').checked;
-            const hasCardId = !!currentCard.id;
+            const endpoint = MTGPrint.resolveCardPrintEndpoint({
+                apiBase: API_BASE,
+                cardId: currentCard.id,
+                cardName: currentCard.name,
+                includeImage,
+                imageOnly,
+            });
 
-            // Choose endpoint based on options (prefer ID endpoints to keep token variant)
-            let endpoint;
-            if (imageOnly) {
-                endpoint = hasCardId
-                    ? `${API_BASE}/api/search/image/by-id?id=${encodeURIComponent(currentCard.id)}`
-                    : `${API_BASE}/api/search/print?card=${encodeURIComponent(currentCard.name)}`;
-            } else if (includeImage) {
-                endpoint = hasCardId
-                    ? `${API_BASE}/api/search/print/by-id?id=${encodeURIComponent(currentCard.id)}`
-                    : `${API_BASE}/api/search/print?card=${encodeURIComponent(currentCard.name)}`;
-            } else {
-                endpoint = hasCardId
-                    ? `${API_BASE}/api/search/by-id?id=${encodeURIComponent(currentCard.id)}`
-                    : `${API_BASE}/api/search?card=${encodeURIComponent(currentCard.name)}`;
-            }
-
-            // Thermer uses the bprint:// protocol
-            window.location.href = `bprint://${endpoint}`;
-
-            // Android-only non-invasive hint (does not alter iOS behavior)
-            const isAndroid = /Android/i.test(navigator.userAgent || "");
-            if (isAndroid) {
-                const hint = document.getElementById("androidThermerHint");
-                setTimeout(() => {
-                    if (hint) hint.classList.add("active");
-                }, 1400);
-            }
+            MTGPrint.launchThermerPrint({
+                endpoint,
+                androidHintElementId: "androidThermerHint",
+            });
         }
 
         function clearPreview() {
             document.getElementById("card-search").value = "";
             document.getElementById("preview-section").classList.remove("active");
-            document.getElementById("androidThermerHint").classList.remove("active");
+            MTGPrint.clearAndroidHint("androidThermerHint");
             currentCard = null;
         }
 
