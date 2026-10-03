@@ -413,6 +413,8 @@
             font-size: 12px;
             color: #475569;
             line-height: 1.35;
+            font-style: italic;
+            opacity: 0.95;
         }
 
         .modal-close {
@@ -820,6 +822,19 @@
             }
         }
 
+        function getEffectSummary(rulesText) {
+            if (!rulesText) return "Efeito: sem texto de regras";
+
+            // Pega a primeira frase/habilidade para manter curto e menos ambíguo
+            const compact = rulesText.replace(/\s+/g, " ").trim();
+            const firstLine = compact.split(/\n|\.|;/)[0].trim();
+            const base = firstLine || compact;
+            const maxLen = 95;
+            const shortText = base.length > maxLen ? `${base.slice(0, maxLen)}...` : base;
+
+            return `Efeito: ${shortText}`;
+        }
+
         function showSelectionModal(results) {
             const selectionList = document.getElementById("selectionList");
             selectionList.innerHTML = "";
@@ -843,15 +858,10 @@
                 details.textContent = parts.join(" • ");
                 div.appendChild(details);
 
-                if (card.rules_text) {
-                    const rules = document.createElement("div");
-                    rules.className = "card-option-rules";
-                    const snippet = card.rules_text.length > 140
-                        ? `${card.rules_text.slice(0, 140)}...`
-                        : card.rules_text;
-                    rules.textContent = snippet;
-                    div.appendChild(rules);
-                }
+                const rules = document.createElement("div");
+                rules.className = "card-option-rules";
+                rules.textContent = getEffectSummary(card.rules_text);
+                div.appendChild(rules);
 
                 selectionList.appendChild(div);
             });
