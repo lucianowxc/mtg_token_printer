@@ -417,6 +417,18 @@
             opacity: 0.95;
         }
 
+        .card-option-badge {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            background: #e0e7ff;
+            color: #3730a3;
+            letter-spacing: 0.2px;
+        }
+
         .modal-close {
             float: right;
             font-size: 24px;
@@ -835,6 +847,25 @@
             return `Efeito: ${shortText}`;
         }
 
+        function getShortRulesBadge(rulesText) {
+            if (!rulesText) return "Vanilla";
+            const text = rulesText.toLowerCase();
+
+            if (text.includes("when this creature dies") || text.includes("when this token dies")) return "On death";
+            if (text.includes("whenever this token attacks") || text.includes("whenever this creature attacks")) return "On attack";
+            if (text.includes("flying")) return "Flying";
+            if (text.includes("reach")) return "Reach";
+            if (text.includes("trample")) return "Trample";
+            if (text.includes("menace")) return "Menace";
+            if (text.includes("deathtouch")) return "Deathtouch";
+            if (text.includes("lifelink")) return "Lifelink";
+            if (text.includes("vigilance")) return "Vigilance";
+            if (text.includes("haste")) return "Haste";
+            if (text.includes("hexproof")) return "Hexproof";
+
+            return "Text ability";
+        }
+
         function showSelectionModal(results) {
             const selectionList = document.getElementById("selectionList");
             selectionList.innerHTML = "";
@@ -857,6 +888,11 @@
                 if (card.mana_cost) parts.push(card.mana_cost);
                 details.textContent = parts.join(" • ");
                 div.appendChild(details);
+
+                const badge = document.createElement("div");
+                badge.className = "card-option-badge";
+                badge.textContent = getShortRulesBadge(card.rules_text);
+                div.appendChild(badge);
 
                 const rules = document.createElement("div");
                 rules.className = "card-option-rules";
