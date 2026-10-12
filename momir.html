@@ -466,8 +466,17 @@
                 <input type="checkbox" id="imageOnlyCheckboxMobile">
             </div>
             <div class="filter-row" style="display:block;">
-                <label for="momirSetsSelect" style="display:block; margin-bottom:8px;">Sets disponíveis</label>
-                <select id="momirSetsSelect" multiple size="6" aria-label="Sets disponíveis" style="width:100%;"></select>
+                <label for="momirSetSearch" style="display:block; margin-bottom:8px;">Sets disponíveis</label>
+                <div style="display:flex; gap:8px; margin-bottom:8px;">
+                    <input id="momirSetSearch" list="momirSetSuggestions" type="text" placeholder="Digite ou selecione um set..." style="flex:1; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px;" />
+                    <button type="button" id="momirAddSetBtn" class="action-btn again" style="padding:8px 12px;">Adicionar</button>
+                </div>
+                <datalist id="momirSetSuggestions"></datalist>
+                <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+                    <button type="button" id="momirSelectAllSets" class="action-btn again" style="flex:1; min-width:110px; padding:8px 10px;">Marcar todos</button>
+                    <button type="button" id="momirClearSets" class="action-btn thermer" style="flex:1; min-width:110px; padding:8px 10px;">Desmarcar todos</button>
+                </div>
+                <div id="momirSetSelectionList" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;"></div>
             </div>
             <div class="filter-row">
                 <label for="excludeUnsets">Excluir Un-sets</label>
@@ -547,83 +556,231 @@
         let selectedSets = [];
         let excludeUnsets = false;
         let excludeUniversesBeyond = false;
+        let momirSetCatalog = [];
 
         const MOMIR_DEFAULT_SETS = [
             "lea","2ed","3ed","4bb","4ed","5ed","6ed","7ed","8ed","9ed","10e","m10","m11","m12","m13","m14","m15","m19","m20","m21","m22","m23","m24","m25","war","mid","one","woe","vow","otj","thb","eld","afr","znr","ori","ravn","dmu","snc","dsk","ltr","mh1","mh2","mh3","moc","mom","sld","cmm","hbg","cmb","pca"
         ];
 
-        function getAvailableMomirSetCodes(sets) {
-            return (sets || [])
-                .filter((set) => {
-                    if (!set || !set.code || !set.name) return false;
-                    if (!set.released_at) return false;
-                    if (set.digital) return false;
-                    if (set.set_type === 'token' || set.set_type === 'memorabilia') return false;
-                    return true;
-                })
-                .map((set) => set.code.toLowerCase())
+        let allMomirSetCodes = [...MOMIR_DEFAULT_SETS];
+
+        function getMomirSetMetaLabel(setCode, setName) {
+            const code = String(setCode || '').toUpperCase();
+            if (!setName) return code;
+            return `${setName} (${code})`;
+        }
+
+        function sortSetCatalog(setCatalog) {
+            return [...setCatalog].sort((a, b) => {
+                const aTime = a && a.released_at ? new Date(a.released_at).getTime() : 0;
+                const bTime = b && b.released_at ? new Date(b.released_at).getTime() : 0;
+                return bTime - aTime || String(a?.name || '').localeCompare(String(b?.name || ''));
+            });
+        }
+
+        function ensureSelectedSetsCurrent() {
+            if (!selectedSets || selectedSets.length === 0) {
+                selectedSets = [...allMomirSetCodes];
+            }
+            selectedSets = selectedSets
+                .map((code) => String(code).toLowerCase())
                 .filter((code, index, arr) => arr.indexOf(code) === index)
-                .sort((a, b) => a.localeCompare(b));
+                .filter((code) => allMomirSetCodes.includes(code));
+        }
+
+        function renderMomirSetSelectionList(setCatalog) {
+            const selectionList = document.getElementById('momirSetSelectionList');
+            const datalist = document.getElementById('momirSetSuggestions');
+            const searchInput = document.getElementById('momirSetSearch');
+            if (!selectionList || !datalist) return;
+
+            const catalog = sortSetCatalog(setCatalog || momirSetCatalog || []);
+            const uniqueCatalog = catalog.filter((set, index, arr) => {
+                const code = String(set?.code || '').toLowerCase();
+                return code && arr.findIndex((item) => String(item?.code || '').toLowerCase() === code) === index;
+            });
+
+            momirSetCatalog = uniqueCatalog;
+            allMomirSetCodes = uniqueCatalog.map((set) => String(set.code).toLowerCase());
+            ensureSelectedSetsCurrent();
+
+            datalist.innerHTML = '';
+            selectionList.innerHTML = '';
+
+            const query = (searchInput?.value || '').trim().toLowerCase();
+
+            uniqueCatalog.forEach((set) => {
+                const code = String(set.code).toLowerCase();
+                const setLabel = getMomirSetMetaLabel(code, set.name);
+                const matches = !query || code.includes(query) || set.name.toLowerCase().includes(query) || setLabel.toLowerCase().includes(query);
+
+                const option = document.createElement('option');
+                option.value = code.toUpperCase();
+                option.label = setLabel;
+                option.style.display = matches ? '' : 'none';
+                datalist.appendChild(option);
+
+                const row = document.createElement('label');
+                row.dataset.setCode = code;
+                row.style.display = matches ? 'flex' : 'none';
+                row.style.alignItems = 'center';
+                row.style.gap = '8px';
+                row.style.padding = '6px 8px';
+                row.style.border = '1px solid #e5e7eb';
+                row.style.borderRadius = '8px';
+                row.style.background = '#f8fafc';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = selectedSets.includes(code);
+                checkbox.addEventListener('change', () => {
+                    const current = new Set(selectedSets);
+                    if (checkbox.checked) current.add(code);
+                    else current.delete(code);
+                    selectedSets = [...current];
+                    if (selectedSets.length === 0) {
+                        selectedSets = [...allMomirSetCodes];
+                    }
+                });
+
+                const label = document.createElement('span');
+                label.textContent = setLabel;
+                row.appendChild(checkbox);
+                row.appendChild(label);
+                selectionList.appendChild(row);
+            });
+
+            if (!selectionList.children.length) {
+                const empty = document.createElement('div');
+                empty.textContent = 'Nenhum set encontrado';
+                empty.style.color = '#6b7280';
+                empty.style.padding = '8px 0';
+                selectionList.appendChild(empty);
+            }
+        }
+
+        function addSelectedMomirSet() {
+            const input = document.getElementById('momirSetSearch');
+            if (!input) return;
+
+            const typedValue = input.value.trim().toLowerCase();
+            if (!typedValue) return;
+
+            const matches = momirSetCatalog.find((set) => {
+                const code = String(set.code).toLowerCase();
+                const name = String(set.name || '').toLowerCase();
+                return code === typedValue || code.includes(typedValue) || name.includes(typedValue) || `${name} ${code}`.includes(typedValue);
+            });
+            if (!matches) return;
+
+            const code = String(matches.code).toLowerCase();
+            if (!selectedSets.includes(code)) {
+                selectedSets.push(code);
+            }
+
+            input.value = '';
+            renderMomirSetSelectionList(momirSetCatalog);
+        }
+
+        function selectAllMomirSets() {
+            selectedSets = [...allMomirSetCodes];
+            renderMomirSetSelectionList(momirSetCatalog);
+        }
+
+        function clearAllMomirSets() {
+            selectedSets = [];
+            renderMomirSetSelectionList(momirSetCatalog);
+        }
+
+        function syncMomirSetSelectionFilter() {
+            const searchInput = document.getElementById('momirSetSearch');
+            const datalist = document.getElementById('momirSetSuggestions');
+            const selectionList = document.getElementById('momirSetSelectionList');
+            if (!searchInput || !datalist || !selectionList) return;
+
+            const query = searchInput.value.trim().toLowerCase();
+            Array.from(datalist.options).forEach((option) => {
+                const matches = !query || option.value.toLowerCase().includes(query) || option.label.toLowerCase().includes(query);
+                option.style.display = matches ? '' : 'none';
+            });
+
+            Array.from(selectionList.querySelectorAll('[data-set-code]')).forEach((row) => {
+                const code = row.dataset.setCode || '';
+                const label = row.textContent || '';
+                const matches = !query || code.includes(query) || label.toLowerCase().includes(query);
+                row.style.display = matches ? 'flex' : 'none';
+            });
         }
 
         async function populateMomirSetSelect() {
             const select = document.getElementById('momirSetsSelect');
-            if (!select) return;
+            const searchInput = document.getElementById('momirSetSearch');
+            const addBtn = document.getElementById('momirAddSetBtn');
+            const selectAllBtn = document.getElementById('momirSelectAllSets');
+            const clearBtn = document.getElementById('momirClearSets');
+            if (!select) {
+                const fallbackCatalog = MOMIR_DEFAULT_SETS.map((code) => ({ code, name: code.toUpperCase(), released_at: null }));
+                selectedSets = [...MOMIR_DEFAULT_SETS];
+                allMomirSetCodes = [...MOMIR_DEFAULT_SETS];
+                momirSetCatalog = fallbackCatalog;
+                renderMomirSetSelectionList(fallbackCatalog);
+            }
 
             try {
                 const response = await fetch(`${API_BASE}/api/sets`);
-                if (!response.ok) {
-                    throw new Error('Unable to load sets from worker');
-                }
+                if (!response.ok) throw new Error('Unable to load sets from worker');
 
                 const data = await response.json();
-                const setCodes = (data.sets || [])
-                    .map((set) => set.code)
-                    .filter(Boolean)
-                    .map((code) => String(code).toLowerCase())
-                    .filter((code, index, arr) => arr.indexOf(code) === index)
-                    .sort((a, b) => a.localeCompare(b));
+                const catalog = (data.sets || [])
+                    .filter((set) => set && set.code && set.name)
+                    .map((set) => ({
+                        code: String(set.code).toLowerCase(),
+                        name: set.name,
+                        released_at: set.released_at,
+                    }))
+                    .filter((set, index, arr) => arr.findIndex((item) => item.code === set.code) === index);
 
-                if (setCodes.length === 0) {
-                    throw new Error('No valid sets returned');
-                }
+                if (catalog.length === 0) throw new Error('No valid sets returned');
 
-                select.innerHTML = '';
-                setCodes.forEach((setCode) => {
-                    const option = document.createElement('option');
-                    option.value = setCode;
-                    option.textContent = setCode.toUpperCase();
-                    option.selected = true;
-                    select.appendChild(option);
-                });
+                const sortedCatalog = sortSetCatalog(catalog);
+                allMomirSetCodes = sortedCatalog.map((set) => set.code);
+                selectedSets = [...allMomirSetCodes];
+                momirSetCatalog = sortedCatalog;
+                renderMomirSetSelectionList(sortedCatalog);
             } catch (error) {
-                select.innerHTML = '';
-                MOMIR_DEFAULT_SETS.forEach((setCode) => {
-                    const option = document.createElement('option');
-                    option.value = setCode;
-                    option.textContent = setCode.toUpperCase();
-                    option.selected = true;
-                    select.appendChild(option);
-                });
+                const fallbackCatalog = MOMIR_DEFAULT_SETS.map((code) => ({ code, name: code.toUpperCase(), released_at: null }));
+                allMomirSetCodes = [...MOMIR_DEFAULT_SETS];
+                selectedSets = [...allMomirSetCodes];
+                momirSetCatalog = fallbackCatalog;
+                renderMomirSetSelectionList(fallbackCatalog);
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', syncMomirSetSelectionFilter);
+            }
+            if (addBtn) {
+                addBtn.addEventListener('click', addSelectedMomirSet);
+            }
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', selectAllMomirSets);
+            }
+            if (clearBtn) {
+                clearBtn.addEventListener('click', clearAllMomirSets);
             }
         }
 
         function getFilterSelections() {
-            const setSelect = document.getElementById('momirSetsSelect');
-            const selected = Array.from(setSelect.selectedOptions).map((option) => option.value);
             return {
-                setCodes: selected.length ? selected : MOMIR_DEFAULT_SETS,
+                setCodes: selectedSets.length ? selectedSets : [...allMomirSetCodes],
                 excludeUnsets: document.getElementById('excludeUnsets').checked,
                 excludeUniversesBeyond: document.getElementById('excludeUniversesBeyond').checked,
             };
         }
 
         function parseFilterState() {
-            const setSelect = document.getElementById('momirSetsSelect');
-            const allOptions = Array.from(setSelect.options).map((option) => option.value);
-            selectedSets = Array.from(setSelect.selectedOptions).map((option) => option.value);
+            ensureSelectedSetsCurrent();
             if (selectedSets.length === 0) {
-                selectedSets = allOptions;
+                selectedSets = [...allMomirSetCodes];
             }
             excludeUnsets = document.getElementById('excludeUnsets').checked;
             excludeUniversesBeyond = document.getElementById('excludeUniversesBeyond').checked;

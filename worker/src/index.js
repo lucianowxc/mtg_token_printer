@@ -529,7 +529,11 @@ async function fetchAvailableSets() {
       released_at: set.released_at,
       set_type: set.set_type,
     }))
-    .sort((a, b) => a.code.localeCompare(b.code));
+    .sort((a, b) => {
+      const aTime = a.released_at ? new Date(a.released_at).getTime() : 0;
+      const bTime = b.released_at ? new Date(b.released_at).getTime() : 0;
+      return bTime - aTime || a.code.localeCompare(b.code);
+    });
 }
 
 function normalizeSetList(setValue) {

@@ -30,4 +30,20 @@ describe("momir.html", () => {
     expect(image?.classList.contains("card-preview-image")).toBe(true);
     expect(image?.classList.contains("creature-image")).toBe(false);
   });
+
+  it("includes the searchable set selector with bulk selection actions", () => {
+    const searchInput = document.getElementById("momirSetSearch");
+    const addBtn = document.getElementById("momirAddSetBtn");
+    const selectAllBtn = document.getElementById("momirSelectAllSets");
+    const clearBtn = document.getElementById("momirClearSets");
+    const list = document.getElementById("momirSetSelectionList");
+    const datalist = document.getElementById("momirSetSuggestions");
+
+    expect(searchInput).not.toBeNull();
+    expect(addBtn).not.toBeNull();
+    expect(selectAllBtn).not.toBeNull();
+    expect(clearBtn).not.toBeNull();
+    expect(list).not.toBeNull();
+    expect(datalist).not.toBeNull();
+  });
 });
