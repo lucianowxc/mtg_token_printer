@@ -1083,7 +1083,6 @@
             // Ensure initial sync
             syncFromDesktopToMobile();
 
-            // Toggle panel
             function closeDrawer() {
                 filterMenu.classList.remove('open');
                 filterOverlay.classList.remove('open');
@@ -1119,6 +1118,7 @@
                 // ensure desktop checkboxes reflect choices
                 syncFromMobileToDesktop();
                 openThermerPrint(e);
+                closeDrawer();
             });
 
             clearMobile && clearMobile.addEventListener('click', (e) => {

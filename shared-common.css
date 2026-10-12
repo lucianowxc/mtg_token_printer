@@ -178,6 +178,11 @@
     font-size: 14px;
 }
 
+/* Drawer-first UI: hide legacy controls on all viewports */
+.mobile-hide-when-drawer {
+    display: none !important;
+}
+
 @media (max-width: 640px) {
     .mobile-hide-when-drawer {
         display: none !important;
