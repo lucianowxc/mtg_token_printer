@@ -5,6 +5,7 @@ const toolButtons = document.querySelectorAll('.tool-btn');
 const lineWidthInput = document.getElementById('lineWidth');
 const printQuantityInput = document.getElementById('printQuantity');
 const printThermerBtn = document.getElementById('printThermerBtn');
+const thresholdBtn = document.getElementById('thresholdBtn');
 const undoBtn = document.getElementById('undoBtn');
 const clearBtn = document.getElementById('clearBtn');
 const downloadBtn = document.getElementById('downloadBtn');
@@ -23,9 +24,15 @@ const state = {
   startY: 0,
   history: [],
   previewBaseImageData: null,
+  thresholdMode: false,
+  thresholdSource: null,
 };
 
 const WHITE = '#ffffff';
+
+function setDrawingScrollLock(isDrawing) {
+  document.body.classList.toggle('is-drawing', Boolean(isDrawing));
+}
 
 function fillCanvasWhite() {
   ctx.fillStyle = WHITE;
@@ -36,6 +43,67 @@ function pushHistory() {
   state.history.push(canvas.toDataURL());
   if (state.history.length > 30) {
     state.history.shift();
+  }
+}
+
+function restoreCanvasFromDataUrl(dataUrl, callback) {
+  const image = new Image();
+  image.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    if (typeof callback === 'function') callback();
+  };
+  image.src = dataUrl;
+}
+
+function setThresholdButtonState() {
+  if (!thresholdBtn) return;
+  thresholdBtn.classList.toggle('active', state.thresholdMode);
+}
+
+function activateThresholdMode() {
+  if (state.thresholdMode) return;
+
+  state.thresholdSource = canvas.toDataURL('image/png');
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const { data } = imageData;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const luminance = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+    const pixel = luminance > 140 ? 255 : 0;
+    data[i] = pixel;
+    data[i + 1] = pixel;
+    data[i + 2] = pixel;
+    data[i + 3] = 255;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  state.thresholdMode = true;
+  setThresholdButtonState();
+}
+
+function deactivateThresholdMode() {
+  if (!state.thresholdMode || !state.thresholdSource) return;
+
+  const source = state.thresholdSource;
+  state.thresholdMode = false;
+  state.thresholdSource = null;
+  setThresholdButtonState();
+  restoreCanvasFromDataUrl(source);
+}
+
+function toggleThresholdMode() {
+  if (state.thresholdMode) {
+    deactivateThresholdMode();
+    return;
+  }
+
+  activateThresholdMode();
+}
+
+function ensureEditableCanvasState() {
+  if (state.thresholdMode) {
+    deactivateThresholdMode();
   }
 }
 
@@ -102,7 +170,18 @@ function drawShapePreview(tool, x, y) {
 }
 
 function beginDraw(event) {
+  ensureEditableCanvasState();
   event.preventDefault();
+  if (typeof canvas.setPointerCapture === 'function' && event.pointerId !== undefined) {
+    try {
+      canvas.setPointerCapture(event.pointerId);
+    } catch {
+      // Ignore pointer capture failures on older browsers.
+    }
+  }
+
+  setDrawingScrollLock(true);
+
   const { x, y } = getPointerPosition(event);
   state.drawing = true;
   state.startX = x;
@@ -162,10 +241,19 @@ function draw(event) {
   }
 }
 
-function endDraw() {
+function endDraw(event) {
   if (!state.drawing) return;
   state.drawing = false;
   state.previewBaseImageData = null;
+  setDrawingScrollLock(false);
+
+  if (event?.pointerId !== undefined && typeof canvas.releasePointerCapture === 'function') {
+    try {
+      canvas.releasePointerCapture(event.pointerId);
+    } catch {
+      // Ignore pointer release failures.
+    }
+  }
 
   if (state.tool === 'pen' || state.tool === 'eraser') {
     ctx.beginPath();
@@ -173,6 +261,7 @@ function endDraw() {
 }
 
 function undo() {
+  ensureEditableCanvasState();
   if (state.history.length <= 1) {
     fillCanvasWhite();
     state.history = [];
@@ -191,6 +280,7 @@ function undo() {
 }
 
 function clearCanvas() {
+  ensureEditableCanvasState();
   pushHistory();
   fillCanvasWhite();
 }
@@ -266,6 +356,10 @@ canvas.addEventListener('pointermove', draw);
 canvas.addEventListener('pointerup', endDraw);
 canvas.addEventListener('pointercancel', endDraw);
 canvas.addEventListener('pointerleave', endDraw);
+window.addEventListener('pointerup', endDraw);
+
+canvas.addEventListener('touchstart', (event) => event.preventDefault(), { passive: false });
+canvas.addEventListener('touchmove', (event) => event.preventDefault(), { passive: false });
 
 lineWidthInput.addEventListener('input', (event) => {
   state.lineWidth = Number(event.target.value);
@@ -283,8 +377,16 @@ undoBtn.addEventListener('click', undo);
 clearBtn.addEventListener('click', clearCanvas);
 downloadBtn.addEventListener('click', downloadCanvas);
 printThermerBtn?.addEventListener('click', printCanvasWithThermer);
+thresholdBtn?.addEventListener('click', toggleThresholdMode);
 
 fillCanvasWhite();
 pushHistory();
+
+const isCoarsePointer = window.matchMedia?.('(pointer: coarse)')?.matches;
+if (isCoarsePointer && state.lineWidth < 6) {
+  state.lineWidth = 6;
+  lineWidthInput.value = String(state.lineWidth);
+}
+
 setTool('pen');
 setColor('#111827');

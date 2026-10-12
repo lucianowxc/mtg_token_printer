@@ -21,13 +21,13 @@
     <main class="designer-layout">
       <aside class="toolbar" aria-label="Ferramentas de desenho">
         <div class="tool-group">
-          <button class="tool-btn active" data-tool="pen">✏️ Lápis</button>
-          <button class="tool-btn" data-tool="line">／ Linha</button>
-          <button class="tool-btn" data-tool="rect">▭ Retângulo</button>
-          <button class="tool-btn" data-tool="circle">◯ Círculo</button>
-          <button class="tool-btn" data-tool="triangle">△ Triângulo</button>
-          <button class="tool-btn" data-tool="eraser">␡ Borracha</button>
-          <button class="tool-btn" data-tool="text">T Texto</button>
+          <button class="tool-btn active" data-tool="pen" title="Lápis" aria-label="Lápis">✏️</button>
+          <button class="tool-btn" data-tool="line" title="Linha" aria-label="Linha">／</button>
+          <button class="tool-btn" data-tool="rect" title="Retângulo" aria-label="Retângulo">▭</button>
+          <button class="tool-btn" data-tool="circle" title="Círculo" aria-label="Círculo">◯</button>
+          <button class="tool-btn" data-tool="triangle" title="Triângulo" aria-label="Triângulo">△</button>
+          <button class="tool-btn" data-tool="eraser" title="Borracha" aria-label="Borracha">␡</button>
+          <button class="tool-btn" data-tool="text" title="Texto" aria-label="Texto">T</button>
         </div>
 
         <div class="panel-block">
@@ -36,26 +36,24 @@
         </div>
 
         <div class="panel-block">
-          <label>Cor</label>
+          <label>Tonalidade</label>
           <div class="swatches" aria-label="Paleta de cores">
             <button class="swatch active" data-color="#111827" style="background:#111827" title="Preto"></button>
-            <button class="swatch" data-color="#ffffff" style="background:#ffffff; border:1px solid #d1d5db" title="Branco"></button>
+            <button class="swatch" data-color="#000000" style="background:#000000" title="Preto total"></button>
+            <button class="swatch" data-color="#374151" style="background:#374151" title="Cinza escuro"></button>
             <button class="swatch" data-color="#6b7280" style="background:#6b7280" title="Cinza"></button>
-            <button class="swatch" data-color="#dc2626" style="background:#dc2626" title="Vermelho"></button>
-            <button class="swatch" data-color="#2563eb" style="background:#2563eb" title="Azul"></button>
-            <button class="swatch" data-color="#16a34a" style="background:#16a34a" title="Verde"></button>
-            <button class="swatch" data-color="#f59e0b" style="background:#f59e0b" title="Amarelo"></button>
-            <button class="swatch" data-color="#7c3aed" style="background:#7c3aed" title="Roxo"></button>
+            <button class="swatch" data-color="#9ca3af" style="background:#9ca3af" title="Cinza claro"></button>
+            <button class="swatch" data-color="#ffffff" style="background:#ffffff; border:1px solid #d1d5db" title="Branco"></button>
           </div>
         </div>
 
         <div class="panel-block actions-block">
-          <label for="printQuantity">Cópias na Thermer</label>
-          <input id="printQuantity" type="number" min="1" max="10" value="1" />
-          <button id="printThermerBtn" class="action-btn thermer">🖨️ Imprimir na Thermer</button>
-          <button id="undoBtn" class="action-btn secondary">↶ Desfazer</button>
-          <button id="clearBtn" class="action-btn danger">Limpar</button>
-          <button id="downloadBtn" class="action-btn primary">⬇️ Exportar PNG</button>
+          <input id="printQuantity" type="number" min="1" max="10" value="1" title="Quantidade de cópias" aria-label="Quantidade de cópias" />
+          <button id="thresholdBtn" class="action-btn secondary" title="Alternar threshold P&B" aria-label="Alternar threshold P&B">◐</button>
+          <button id="printThermerBtn" class="action-btn thermer" title="Imprimir na Thermer" aria-label="Imprimir na Thermer">🖨️</button>
+          <button id="undoBtn" class="action-btn secondary" title="Desfazer" aria-label="Desfazer">↶</button>
+          <button id="clearBtn" class="action-btn danger" title="Limpar canvas" aria-label="Limpar canvas">⌫</button>
+          <button id="downloadBtn" class="action-btn primary" title="Exportar PNG" aria-label="Exportar PNG">⬇️</button>
           <div class="android-hint" id="androidThermerHint">
             ⚠️ Se o app não abrir automaticamente no Android, abra o Thermer manualmente e tente novamente.
           </div>

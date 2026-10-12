@@ -13,6 +13,7 @@ describe("token-designer.html", () => {
   it("includes direct Thermer print controls", () => {
     expect(document.getElementById("printQuantity")).not.toBeNull();
     expect(document.getElementById("printThermerBtn")).not.toBeNull();
+    expect(document.getElementById("thresholdBtn")).not.toBeNull();
     expect(document.getElementById("androidThermerHint")).not.toBeNull();
   });
 
