@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Token Designer</title>
+  <link rel="stylesheet" href="token-designer.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <a href="index.html" class="back-link">← Voltar</a>
+        <div>
+          <p class="eyebrow">Ferramenta isolada</p>
+          <h1>Token Designer</h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="designer-layout">
+      <aside class="toolbar" aria-label="Ferramentas de desenho">
+        <div class="tool-group">
+          <button class="tool-btn active" data-tool="pen">✏️ Lápis</button>
+          <button class="tool-btn" data-tool="line">／ Linha</button>
+          <button class="tool-btn" data-tool="rect">▭ Retângulo</button>
+          <button class="tool-btn" data-tool="circle">◯ Círculo</button>
+          <button class="tool-btn" data-tool="triangle">△ Triângulo</button>
+          <button class="tool-btn" data-tool="eraser">␡ Borracha</button>
+          <button class="tool-btn" data-tool="text">T Texto</button>
+        </div>
+
+        <div class="panel-block">
+          <label for="lineWidth">Espessura</label>
+          <input id="lineWidth" type="range" min="2" max="20" value="4" />
+        </div>
+
+        <div class="panel-block">
+          <label>Cor</label>
+          <div class="swatches" aria-label="Paleta de cores">
+            <button class="swatch active" data-color="#111827" style="background:#111827" title="Preto"></button>
+            <button class="swatch" data-color="#ffffff" style="background:#ffffff; border:1px solid #d1d5db" title="Branco"></button>
+            <button class="swatch" data-color="#6b7280" style="background:#6b7280" title="Cinza"></button>
+            <button class="swatch" data-color="#dc2626" style="background:#dc2626" title="Vermelho"></button>
+            <button class="swatch" data-color="#2563eb" style="background:#2563eb" title="Azul"></button>
+            <button class="swatch" data-color="#16a34a" style="background:#16a34a" title="Verde"></button>
+            <button class="swatch" data-color="#f59e0b" style="background:#f59e0b" title="Amarelo"></button>
+            <button class="swatch" data-color="#7c3aed" style="background:#7c3aed" title="Roxo"></button>
+          </div>
+        </div>
+
+        <div class="panel-block actions-block">
+          <button id="undoBtn" class="action-btn secondary">↶ Desfazer</button>
+          <button id="clearBtn" class="action-btn danger">Limpar</button>
+          <button id="downloadBtn" class="action-btn primary">⬇️ Exportar PNG</button>
+        </div>
+      </aside>
+
+      <section class="canvas-panel">
+        <div class="canvas-wrap">
+          <canvas id="tokenCanvas" width="720" height="720" aria-label="Canvas do token"></canvas>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="token-designer.js"></script>
+</body>
+</html>
