@@ -6,6 +6,7 @@
       cardName,
       includeImage = false,
       imageOnly = false,
+      quantity = 1,
     } = options || {};
 
     if (!apiBase) throw new Error("Missing apiBase");
@@ -13,22 +14,23 @@
 
     const encodedId = cardId ? encodeURIComponent(cardId) : null;
     const encodedName = cardName ? encodeURIComponent(cardName) : null;
+    const quantityParam = `&quantity=${quantity}`;
 
     if (imageOnly) {
       return encodedId
-        ? `${apiBase}/api/search/image/by-id?id=${encodedId}`
-        : `${apiBase}/api/search/print?card=${encodedName}`;
+        ? `${apiBase}/api/search/image/by-id?id=${encodedId}${quantityParam}`
+        : `${apiBase}/api/search/print?card=${encodedName}${quantityParam}`;
     }
 
     if (includeImage) {
       return encodedId
-        ? `${apiBase}/api/search/print/by-id?id=${encodedId}`
-        : `${apiBase}/api/search/print?card=${encodedName}`;
+        ? `${apiBase}/api/search/print/by-id?id=${encodedId}${quantityParam}`
+        : `${apiBase}/api/search/print?card=${encodedName}${quantityParam}`;
     }
 
     return encodedId
-      ? `${apiBase}/api/search/by-id?id=${encodedId}`
-      : `${apiBase}/api/search?card=${encodedName}`;
+      ? `${apiBase}/api/search/by-id?id=${encodedId}${quantityParam}`
+      : `${apiBase}/api/search?card=${encodedName}${quantityParam}`;
   }
 
   function launchThermerPrint(options) {

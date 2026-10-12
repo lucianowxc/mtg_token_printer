@@ -22,7 +22,7 @@ describe("shared-print", () => {
       includeImage: true,
     });
 
-    expect(endpoint).toBe("https://api.example.com/api/search/print/by-id?id=abc-123");
+    expect(endpoint).toBe("https://api.example.com/api/search/print/by-id?id=abc-123&quantity=1");
   });
 
   it("resolves endpoint by name and default mode", async () => {
@@ -33,7 +33,7 @@ describe("shared-print", () => {
       cardName: "Goblin Guide",
     });
 
-    expect(endpoint).toBe("https://api.example.com/api/search?card=Goblin%20Guide");
+    expect(endpoint).toBe("https://api.example.com/api/search?card=Goblin%20Guide&quantity=1");
   });
 
   it("removes active class from android hint", async () => {

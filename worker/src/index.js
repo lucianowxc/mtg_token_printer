@@ -268,7 +268,7 @@ function toAscii(str) {
 // We consolidate multiple lines into a single text entry using "<br />"
 // (documented by Thermer as the way to do multi-line text in one entry),
 // keeping the total entry count at 4 (1 spare under the limit).
-function generateThermerJson(card) {
+function generateThermerJson(card, quantity = 1) {
   const output = [];
   const divider = (char) => char.repeat(32);
   const name = toAscii(card.name);
@@ -278,106 +278,110 @@ function generateThermerJson(card) {
   const flavorText = toAscii(card.flavor_text);
   const pt = toAscii(card.pt);
 
-  // Entry 1: header block (name, mana, type)
-  const headerLines = [divider("="), `NAME: ${name.toUpperCase()}`];
+  for (let i = 0; i < quantity; i++) {
+    // Entry 1: header block (name, mana, type)
+    const headerLines = [divider("="), `NAME: ${name.toUpperCase()}`];
 
-  if (manaCost || card.mana_value !== null) {
-    const costString = manaCost
-      ? `${manaCost} (MV: ${card.mana_value ?? 0})`
-      : `MV: ${card.mana_value ?? 0}`;
-    headerLines.push(`MANA: ${costString}`);
-  }
+    if (manaCost || card.mana_value !== null) {
+      const costString = manaCost
+        ? `${manaCost} (MV: ${card.mana_value ?? 0})`
+        : `MV: ${card.mana_value ?? 0}`;
+      headerLines.push(`MANA: ${costString}`);
+    }
 
-  headerLines.push(`TYPE: ${typeLine}`, divider("-"));
+    headerLines.push(`TYPE: ${typeLine}`, divider("-"));
 
-  output.push({
-    type: 0,
-    content: headerLines.join("<br />"),
-    bold: 1,
-    align: 0,
-    format: 0,
-  });
-
-  // Entry 2: QR code (optional)
-  if (card.scryfall_uri) {
-    output.push({
-      type: 3, // QR code
-      value: card.scryfall_uri,
-      size: DEFAULT_QR_SIZE_MM,
-      align: 2,
-    });
-  }
-
-  // Entry 3: rules text + flavor text combined
-  const bodyLines = [];
-  if (rulesText) {
-    bodyLines.push(rulesText);
-  }
-  if (flavorText) {
-    if (bodyLines.length) bodyLines.push(divider("-"));
-    bodyLines.push(flavorText);
-  }
-  if (bodyLines.length) {
     output.push({
       type: 0,
-      content: bodyLines.join("<br />"),
-      bold: 0,
+      content: headerLines.join("<br />"),
+      bold: 1,
       align: 0,
+      format: 0,
+    });
+
+    // Entry 2: QR code (optional)
+    if (card.scryfall_uri) {
+      output.push({
+        type: 3, // QR code
+        value: card.scryfall_uri,
+        size: DEFAULT_QR_SIZE_MM,
+        align: 2,
+      });
+    }
+
+    // Entry 3: rules text + flavor text combined
+    const bodyLines = [];
+    if (rulesText) {
+      bodyLines.push(rulesText);
+    }
+    if (flavorText) {
+      if (bodyLines.length) bodyLines.push(divider("-"));
+      bodyLines.push(flavorText);
+    }
+    if (bodyLines.length) {
+      output.push({
+        type: 0,
+        content: bodyLines.join("<br />"),
+        bold: 0,
+        align: 0,
+        format: 0,
+      });
+    }
+
+    // Entry 4: footer (P/T + closing divider + feed)
+    const footerLines = [divider("-")];
+    if (pt) {
+      footerLines.push(`[${pt}]`);
+    }
+    footerLines.push(divider("="), " ", " ");
+
+    output.push({
+      type: 0,
+      content: footerLines.join("<br />"),
+      bold: 1,
+      align: card.pt ? 2 : 1,
       format: 0,
     });
   }
 
-  // Entry 4: footer (P/T + closing divider + feed)
-  const footerLines = [divider("-")];
-  if (pt) {
-    footerLines.push(`[${pt}]`);
-  }
-  footerLines.push(divider("="), " ", " ");
-
-  output.push({
-    type: 0,
-    content: footerLines.join("<br />"),
-    bold: 1,
-    align: card.pt ? 2 : 1,
-    format: 0,
-  });
-
   return output;
 }
 
-function generateThermerImageOnlyJson(card) {
+function generateThermerImageOnlyJson(card, quantity = 1) {
   const output = [];
 
-  if (card.image_uris?.normal) {
+  for (let i = 0; i < quantity; i++) {
+    if (card.image_uris?.normal) {
+      output.push({
+        type: 1,
+        path: card.image_uris.normal,
+        align: 1,
+      });
+    }
+
+    if (card.scryfall_uri) {
+      output.push({
+        type: 3,
+        value: card.scryfall_uri,
+        size: DEFAULT_QR_SIZE_MM,
+        align: 2,
+      });
+    }
+
     output.push({
-      type: 1,
-      path: card.image_uris.normal,
+      type: 0,
+      content: " <br /> ",
+      bold: 0,
       align: 1,
+      format: 0,
     });
   }
-
-  if (card.scryfall_uri) {
-    output.push({
-      type: 3,
-      value: card.scryfall_uri,
-      size: DEFAULT_QR_SIZE_MM,
-      align: 2,
-    });
-  }
-
-  output.push({
-    type: 0,
-    content: " <br /> ",
-    bold: 0,
-    align: 1,
-    format: 0,
-  });
 
   return output;
 }
 
 // Generate Thermer JSON with card image included as first entry
-function generateThermerJsonWithImage(card) {
+function generateThermerJsonWithImage(card, quantity = 1) {
   const output = [];
   const divider = (char) => char.repeat(32);
   const name = toAscii(card.name);
@@ -387,79 +391,81 @@ function generateThermerJsonWithImage(card) {
   const flavorText = toAscii(card.flavor_text);
   const pt = toAscii(card.pt);
 
-  // Entry 1: Image (if available)
-  if (card.image_uris?.normal) {
-    output.push({
-      type: 1,
-      path: card.image_uris.normal,
-      align: 1,
-    });
-  }
+  for (let i = 0; i < quantity; i++) {
+    // Entry 1: Image (if available)
+    if (card.image_uris?.normal) {
+      output.push({
+        type: 1,
+        path: card.image_uris.normal,
+        align: 1,
+      });
+    }
 
-  // Entry 2: header block (name, mana, type) + P/T consolidated
-  const headerLines = [divider("="), `NAME: ${name.toUpperCase()}`];
+    // Entry 2: header block (name, mana, type) + P/T consolidated
+    const headerLines = [divider("="), `NAME: ${name.toUpperCase()}`];
 
-  if (manaCost || card.mana_value !== null) {
-    const costString = manaCost
-      ? `${manaCost} (MV: ${card.mana_value ?? 0})`
-      : `MV: ${card.mana_value ?? 0}`;
-    headerLines.push(`MANA: ${costString}`);
-  }
+    if (manaCost || card.mana_value !== null) {
+      const costString = manaCost
+        ? `${manaCost} (MV: ${card.mana_value ?? 0})`
+        : `MV: ${card.mana_value ?? 0}`;
+      headerLines.push(`MANA: ${costString}`);
+    }
 
-  headerLines.push(`TYPE: ${typeLine}`);
-  
-  // Add P/T to header if available
-  if (pt) {
-    headerLines.push(`P/T: ${pt}`);
-  }
-  
-  headerLines.push(divider("-"));
+    headerLines.push(`TYPE: ${typeLine}`);
+    
+    // Add P/T to header if available
+    if (pt) {
+      headerLines.push(`P/T: ${pt}`);
+    }
+    
+    headerLines.push(divider("-"));
 
-  output.push({
-    type: 0,
-    content: headerLines.join("<br />"),
-    bold: 1,
-    align: 0,
-    format: 0,
-  });
-
-  // Entry 3: QR code (optional)
-  if (card.scryfall_uri) {
-    output.push({
-      type: 3, // QR code
-      value: card.scryfall_uri,
-      size: DEFAULT_QR_SIZE_MM,
-      align: 2,
-    });
-  }
-
-  // Entry 4: rules text + flavor text combined
-  const bodyLines = [];
-  if (rulesText) {
-    bodyLines.push(rulesText);
-  }
-  if (flavorText) {
-    if (bodyLines.length) bodyLines.push(divider("-"));
-    bodyLines.push(flavorText);
-  }
-  if (bodyLines.length) {
     output.push({
       type: 0,
-      content: bodyLines.join("<br />"),
-      bold: 0,
+      content: headerLines.join("<br />"),
+      bold: 1,
       align: 0,
       format: 0,
     });
-  }
 
-  // Entry 5: closing divider + feed
-  output.push({
-    type: 0,
-    content: `${divider("=")} `,
-    bold: 1,
-    align: 1,
-    format: 0,
-  });
+    // Entry 3: QR code (optional)
+    if (card.scryfall_uri) {
+      output.push({
+        type: 3, // QR code
+        value: card.scryfall_uri,
+        size: DEFAULT_QR_SIZE_MM,
+        align: 2,
+      });
+    }
+
+    // Entry 4: rules text + flavor text combined
+    const bodyLines = [];
+    if (rulesText) {
+      bodyLines.push(rulesText);
+    }
+    if (flavorText) {
+      if (bodyLines.length) bodyLines.push(divider("-"));
+      bodyLines.push(flavorText);
+    }
+    if (bodyLines.length) {
+      output.push({
+        type: 0,
+        content: bodyLines.join("<br />"),
+        bold: 0,
+        align: 0,
+        format: 0,
+      });
+    }
+
+    // Entry 5: closing divider + feed
+    output.push({
+      type: 0,
+      content: `${divider("=")} `,
+      bold: 1,
+      align: 1,
+      format: 0,
+    });
+  }
 
   return output;
 }
@@ -742,7 +748,8 @@ export default {
       if (!cardName) return jsonResponse({ error: "Missing 'card' parameter" }, 400);
       const card = await fetchCardData(cardName);
       if (!card) return jsonResponse({ error: `Card not found: ${cardName}` }, 404);
-      const thermerArray = generateThermerJsonWithImage(card);
+      const quantity = parseInt(url.searchParams.get("quantity") || "1", 10);
+      const thermerArray = generateThermerJsonWithImage(card, quantity);
       return jsonResponse(toForcedObject(thermerArray));
     }
 
@@ -750,7 +757,8 @@ export default {
       if (!cardId) return jsonResponse({ error: "Missing 'id' parameter" }, 400);
       const card = await fetchCardDataById(cardId);
       if (!card) return jsonResponse({ error: `Card not found: ${cardId}` }, 404);
-      const thermerArray = generateThermerJson(card);
+      const quantity = parseInt(url.searchParams.get("quantity") || "1", 10);
+      const thermerArray = generateThermerJson(card, quantity);
       return jsonResponse(toForcedObject(thermerArray));
     }
 
@@ -758,7 +766,8 @@ export default {
       if (!cardId) return jsonResponse({ error: "Missing 'id' parameter" }, 400);
       const card = await fetchCardDataById(cardId);
       if (!card) return jsonResponse({ error: `Card not found: ${cardId}` }, 404);
-      const thermerArray = generateThermerJsonWithImage(card);
+      const quantity = parseInt(url.searchParams.get("quantity") || "1", 10);
+      const thermerArray = generateThermerJsonWithImage(card, quantity);
       return jsonResponse(toForcedObject(thermerArray));
     }
 
@@ -766,7 +775,8 @@ export default {
       if (!cardId) return jsonResponse({ error: "Missing 'id' parameter" }, 400);
       const card = await fetchCardDataById(cardId);
       if (!card) return jsonResponse({ error: `Card not found: ${cardId}` }, 404);
-      const thermerArray = generateThermerImageOnlyJson(card);
+      const quantity = parseInt(url.searchParams.get("quantity") || "1", 10);
+      const thermerArray = generateThermerImageOnlyJson(card, quantity);
       return jsonResponse(toForcedObject(thermerArray));
     }
 

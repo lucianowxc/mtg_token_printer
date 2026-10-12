@@ -401,12 +401,20 @@
                 <label for="imageOnlyCheckbox" data-i18n="imageOnly">🖼️ Somente Imagem (Scryfall)</label>
             </div>
 
+            <div class="image-option mobile-hide-when-drawer">
+                <label for="printQuantity" style="display:block; margin-bottom:8px;">Quantidade de Cópias</label>
+                <input type="number" id="printQuantity" value="1" min="1" max="10" style="width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px;">
+            </div>
+
             <div class="loading" id="loading" data-i18n="loading">
                 ⏳ Buscando criatura aleatória...
             </div>
 
             <button class="generate-btn" id="generateBtn" disabled data-i18n="generateBtn">
                 Gerar Criatura
+            </button>
+            <button class="action-btn again" id="repeatBtn" style="display: none; margin-top: 10px;">
+                Repetir Última Busca
             </button>
         </div>
 
@@ -836,6 +844,7 @@
 
                 const creature = await response.json();
                 lastUsedCMC = selectedCMC;
+                document.getElementById('repeatBtn').style.display = 'block';
 
                 if (isSurpriseMode) {
                     currentCreature = creature;
@@ -898,6 +907,7 @@
 
             const includeImage = document.getElementById('includeImageCheckbox').checked;
             const imageOnly = document.getElementById('imageOnlyCheckbox').checked;
+            const quantity = parseInt(document.getElementById('printQuantity').value, 10) || 1;
             
             const endpoint = MTGPrint.resolveCardPrintEndpoint({
                 apiBase: API_BASE,
@@ -905,6 +915,7 @@
                 cardName: currentCreature.name,
                 includeImage,
                 imageOnly,
+                quantity,
             });
 
             MTGPrint.launchThermerPrint({ endpoint });
@@ -923,6 +934,7 @@
             
             const includeImage = document.getElementById('includeImageCheckbox').checked;
             const imageOnly = document.getElementById('imageOnlyCheckbox').checked;
+            const quantity = parseInt(document.getElementById('printQuantity').value, 10) || 1;
             
             const endpoint = MTGPrint.resolveCardPrintEndpoint({
                 apiBase: API_BASE,
@@ -930,6 +942,7 @@
                 cardName: currentCreature.name,
                 includeImage,
                 imageOnly,
+                quantity,
             });
 
             MTGPrint.launchThermerPrint({ endpoint });
@@ -1000,6 +1013,7 @@
         document.getElementById('printBtn').addEventListener('click', printWithThermer);
         document.getElementById('printSurpriseBtn').addEventListener('click', printSurprise);
         document.getElementById('revealBtn').addEventListener('click', revealSurprise);
+        document.getElementById('repeatBtn').addEventListener('click', generateCreature);
 
     setupLanguageSelector();
     applyTranslations();
