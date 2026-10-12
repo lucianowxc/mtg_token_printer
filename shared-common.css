@@ -102,3 +102,70 @@
 .lang-switch select option {
     color: #111827;
 }
+
+/* Hamburger filter menu (mobile-first) */
+.hamburger-button {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 22px;
+    padding: 8px;
+    cursor: pointer;
+}
+
+.filter-menu {
+    position: fixed;
+    right: 12px;
+    bottom: 18px;
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.filter-panel {
+    display: none;
+    width: 92vw;
+    max-width: 360px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.filter-panel.active {
+    display: block;
+}
+
+.filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-actions .print-button, .filter-actions button {
+    padding: 10px 12px;
+    font-size: 14px;
+}
+
+@media (min-width: 640px) {
+    /* On larger screens keep floating menu subtle */
+    .filter-menu {
+        right: 24px;
+        bottom: 24px;
+        align-items: flex-end;
+    }
+
+    .filter-panel {
+        width: 320px;
+    }
+}

@@ -520,7 +520,8 @@
                 <label for="imageOnlyCheckbox" data-i18n="imageOnly">🖼️ Somente Imagem (Scryfall)</label>
             </div>
 
-            <div class="print-button-group">
+            <!-- Inline print actions (kept for larger viewports) -->
+            <div class="print-button-group desktop-print-actions" style="display:flex;">
                 <a
                     href="#"
                     class="print-button thermer"
@@ -557,6 +558,25 @@
         </div>
 
         <div class="footer" data-shared-footer="true" data-product-icon="🎴" data-product-name="MTG Token Printer"></div>
+    </div>
+
+    <!-- Floating hamburger filter menu (mobile friendly) -->
+    <div class="filter-menu" id="filterMenu">
+        <div class="filter-panel" id="filterPanel" aria-hidden="true">
+            <div class="filter-row">
+                <label for="includeImageCheckbox" data-i18n="includeImage">🖼️ Incluir Imagem na Impressão</label>
+                <input type="checkbox" id="includeImageCheckboxMobile">
+            </div>
+            <div class="filter-row">
+                <label for="imageOnlyCheckbox" data-i18n="imageOnly">🖼️ Somente Imagem (Scryfall)</label>
+                <input type="checkbox" id="imageOnlyCheckboxMobile">
+            </div>
+            <div class="filter-row filter-actions">
+                <a href="#" class="print-button thermer" id="print-button-mobile">🖨️ <span data-i18n="printBtn">Imprimir</span></a>
+                <button class="print-button clear" id="clear-button-mobile">✕ <span data-i18n="clearBtn">Limpar</span></button>
+            </div>
+        </div>
+        <button class="hamburger-button" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">☰</button>
     </div>
 
     <script src="shared-layout.js"></script>
@@ -1032,6 +1052,65 @@
                 // Só busca com Enter se o autocomplete não consumiu o evento
                 if (e.key === "Enter" && !e.defaultPrevented) {
                     searchCard();
+                }
+            });
+
+            // Mobile filter menu behaviour
+            const filterToggle = document.getElementById('filterToggle');
+            const filterPanel = document.getElementById('filterPanel');
+            const filterMenu = document.getElementById('filterMenu');
+            const includeDesktop = document.getElementById('includeImageCheckbox');
+            const imageOnlyDesktop = document.getElementById('imageOnlyCheckbox');
+            const includeMobile = document.getElementById('includeImageCheckboxMobile');
+            const imageOnlyMobile = document.getElementById('imageOnlyCheckboxMobile');
+            const printMobile = document.getElementById('print-button-mobile');
+            const clearMobile = document.getElementById('clear-button-mobile');
+
+            function syncFromDesktopToMobile() {
+                includeMobile.checked = includeDesktop.checked;
+                imageOnlyMobile.checked = imageOnlyDesktop.checked;
+            }
+
+            function syncFromMobileToDesktop() {
+                includeDesktop.checked = includeMobile.checked;
+                imageOnlyDesktop.checked = imageOnlyMobile.checked;
+            }
+
+            // Ensure initial sync
+            syncFromDesktopToMobile();
+
+            // Toggle panel
+            filterToggle && filterToggle.addEventListener('click', () => {
+                const expanded = filterToggle.getAttribute('aria-expanded') === 'true';
+                filterToggle.setAttribute('aria-expanded', String(!expanded));
+                filterPanel.classList.toggle('active');
+                filterPanel.setAttribute('aria-hidden', String(expanded));
+            });
+
+            // Sync changes both ways
+            includeDesktop && includeDesktop.addEventListener('change', syncFromDesktopToMobile);
+            imageOnlyDesktop && imageOnlyDesktop.addEventListener('change', syncFromDesktopToMobile);
+            includeMobile && includeMobile.addEventListener('change', syncFromMobileToDesktop);
+            imageOnlyMobile && imageOnlyMobile.addEventListener('change', syncFromMobileToDesktop);
+
+            // Mobile print/clear buttons
+            printMobile && printMobile.addEventListener('click', (e) => {
+                e.preventDefault();
+                // ensure desktop checkboxes reflect choices
+                syncFromMobileToDesktop();
+                openThermerPrint(e);
+            });
+
+            clearMobile && clearMobile.addEventListener('click', (e) => {
+                e.preventDefault();
+                clearPreview();
+            });
+
+            // Close filter panel when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.filter-menu') && filterPanel.classList.contains('active')) {
+                    filterPanel.classList.remove('active');
+                    filterToggle && filterToggle.setAttribute('aria-expanded', 'false');
                 }
             });
         });

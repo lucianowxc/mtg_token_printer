@@ -449,6 +449,28 @@
         <div class="footer" data-shared-footer="true" data-product-icon="⚡" data-product-name="Momir Vig"></div>
     </div>
 
+    <div class="filter-menu" id="momirFilterMenu">
+        <div class="filter-panel" id="momirFilterPanel" aria-hidden="true">
+            <div class="filter-row">
+                <label for="includeImageCheckboxMobile" data-i18n="includeImage">🖼️ Incluir Imagem na Impressão</label>
+                <input type="checkbox" id="includeImageCheckboxMobile">
+            </div>
+            <div class="filter-row">
+                <label for="imageOnlyCheckboxMobile" data-i18n="imageOnly">🖼️ Somente Imagem (Scryfall)</label>
+                <input type="checkbox" id="imageOnlyCheckboxMobile">
+            </div>
+            <div class="filter-row filter-actions">
+                <button class="action-btn thermer" id="printBtnMobile" data-i18n="printBtn">🖨️ Imprimir</button>
+                <button class="action-btn again" id="generateBtnMobile" data-i18n="generateAnother">Gerar Outra</button>
+            </div>
+            <div class="filter-row filter-actions" id="surpriseMobileActions" style="display:none;">
+                <button class="action-btn thermer" id="printSurpriseBtnMobile" data-i18n="printSurpriseBtn">🖨️ Imprimir Surpresa</button>
+                <button class="action-btn scryfall" id="revealBtnMobile" data-i18n="revealBtn">👁️ Revelar</button>
+            </div>
+        </div>
+        <button class="hamburger-button" id="momirFilterToggle" aria-expanded="false" aria-controls="momirFilterPanel">☰</button>
+    </div>
+
     <script src="shared-layout.js"></script>
     <script src="shared-print.js"></script>
     <script src="shared-i18n.js"></script>
@@ -664,6 +686,75 @@
             MTGPrint.launchThermerPrint({ endpoint });
         }
 
+        function syncSurpriseMobileActions() {
+            const surpriseActive = document.getElementById('surpriseSection').classList.contains('active');
+            const surpriseMobile = document.getElementById('surpriseMobileActions');
+            if (surpriseMobile) {
+                surpriseMobile.style.display = surpriseActive ? 'flex' : 'none';
+            }
+        }
+
+        function setupMobileFilterMenu() {
+            const filterToggle = document.getElementById('momirFilterToggle');
+            const filterPanel = document.getElementById('momirFilterPanel');
+
+            const includeDesktop = document.getElementById('includeImageCheckbox');
+            const imageOnlyDesktop = document.getElementById('imageOnlyCheckbox');
+            const includeMobile = document.getElementById('includeImageCheckboxMobile');
+            const imageOnlyMobile = document.getElementById('imageOnlyCheckboxMobile');
+
+            const printBtnMobile = document.getElementById('printBtnMobile');
+            const generateBtnMobile = document.getElementById('generateBtnMobile');
+            const printSurpriseBtnMobile = document.getElementById('printSurpriseBtnMobile');
+            const revealBtnMobile = document.getElementById('revealBtnMobile');
+
+            function syncFromDesktopToMobile() {
+                includeMobile.checked = includeDesktop.checked;
+                imageOnlyMobile.checked = imageOnlyDesktop.checked;
+            }
+
+            function syncFromMobileToDesktop() {
+                includeDesktop.checked = includeMobile.checked;
+                imageOnlyDesktop.checked = imageOnlyMobile.checked;
+            }
+
+            syncFromDesktopToMobile();
+            syncSurpriseMobileActions();
+
+            if (filterToggle) {
+                filterToggle.addEventListener('click', () => {
+                    const expanded = filterToggle.getAttribute('aria-expanded') === 'true';
+                    filterToggle.setAttribute('aria-expanded', String(!expanded));
+                    filterPanel.classList.toggle('active');
+                    filterPanel.setAttribute('aria-hidden', String(expanded));
+                    syncSurpriseMobileActions();
+                });
+            }
+
+            includeDesktop.addEventListener('change', syncFromDesktopToMobile);
+            imageOnlyDesktop.addEventListener('change', syncFromDesktopToMobile);
+            includeMobile.addEventListener('change', syncFromMobileToDesktop);
+            imageOnlyMobile.addEventListener('change', syncFromMobileToDesktop);
+
+            printBtnMobile.addEventListener('click', () => {
+                syncFromMobileToDesktop();
+                printWithThermer();
+            });
+            generateBtnMobile.addEventListener('click', generateCreature);
+            printSurpriseBtnMobile.addEventListener('click', () => {
+                syncFromMobileToDesktop();
+                printSurprise();
+            });
+            revealBtnMobile.addEventListener('click', revealSurprise);
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.filter-menu') && filterPanel.classList.contains('active')) {
+                    filterPanel.classList.remove('active');
+                    filterToggle && filterToggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+
         // Event listeners
         document.getElementById('generateBtn').addEventListener('click', generateCreature);
         document.getElementById('againBtn').addEventListener('click', generateCreature);
@@ -676,6 +767,7 @@
 
         // Initialize
         initCMCButtons();
+        setupMobileFilterMenu();
     </script>
 </body>
 </html>
