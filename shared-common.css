@@ -183,11 +183,3 @@
         display: none !important;
     }
 }
-
-@media (min-width: 641px) {
-    .drawer-overlay,
-    .filter-menu,
-    .hamburger-button {
-        display: none;
-    }
-}
