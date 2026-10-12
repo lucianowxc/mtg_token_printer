@@ -79,39 +79,46 @@
 
         .cmc-selector label {
             display: block;
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: #1f2937;
             margin-bottom: 12px;
             font-size: 14px;
         }
 
         .cmc-buttons {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
             gap: 8px;
+            padding: 6px;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
+            border: 1px solid #dfe7f4;
         }
 
         .cmc-btn {
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            color: #333;
-            border-radius: 8px;
+            padding: 10px 8px;
+            border: 1px solid #d8e0ee;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            color: #334155;
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 14px;
-            transition: all 0.3s;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
         }
 
         .cmc-btn:hover {
             border-color: #1e3c72;
-            background: #f0f4f8;
+            background: #f0f4ff;
+            transform: translateY(-1px);
         }
 
         .cmc-btn.active {
-            background: #1e3c72;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
             border-color: #1e3c72;
+            box-shadow: 0 8px 18px rgba(30, 60, 114, 0.2);
         }
 
         .surprise-mode {
@@ -368,12 +375,6 @@
             <button class="action-btn again" id="repeatBtn" style="display: none; margin-top: 10px;">
                 Repetir Última Busca
             </button>
-
-            <div class="primary-actions">
-                <button class="generate-btn secondary" id="generateAndPrintBtn" disabled>
-                    Gerar e Imprimir
-                </button>
-            </div>
         </div>
 
         <div class="surprise-section" id="surpriseSection">
