@@ -341,41 +341,53 @@
 
         .creature-section {
             background: rgba(255,255,255,0.98);
-            border-radius: 18px;
+            border-radius: 22px;
             padding: 22px 18px 18px;
-            box-shadow: 0 16px 40px rgba(15,23,42,0.2);
+            box-shadow: 0 18px 38px rgba(15,23,42,0.2);
             display: none;
             border: 1px solid rgba(148,163,184,0.2);
+            max-width: 420px;
+            margin: 0 auto;
         }
 
         .creature-section.active {
             display: block;
         }
 
+        .creature-card-shell {
+            background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+            border: 2px solid #d7e2f6;
+            border-radius: 18px;
+            box-shadow: 0 18px 24px rgba(30,41,59,0.12);
+            overflow: hidden;
+            padding: 0;
+        }
+
         #creatureImage {
             display: block;
-            width: min(100%, 360px);
+            width: 100%;
             height: auto;
-            max-height: 520px;
+            max-height: 500px;
             object-fit: contain;
-            border-radius: 14px;
-            margin: 0 auto 18px;
-            background: #eef2ff;
-            box-shadow: 0 20px 30px rgba(30,41,59,0.12);
+            border-radius: 14px 14px 0 0;
+            margin: 0;
+            background: linear-gradient(180deg, #edf5ff 0%, #dfeeff 100%);
+            border-bottom: 1px solid rgba(148,163,184,0.28);
+            box-shadow: inset 0 -10px 30px rgba(148,163,184,0.08);
         }
 
         .creature-name {
             font-size: 26px;
             font-weight: 800;
             color: #1e3c72;
-            margin-bottom: 12px;
+            margin: 16px 18px 10px;
             letter-spacing: -0.02em;
         }
 
         .creature-stat {
             font-size: 14px;
             color: #475569;
-            margin-bottom: 8px;
+            margin: 0 18px 8px;
             line-height: 1.6;
         }
 
@@ -384,23 +396,47 @@
             color: #1f2937;
         }
 
+        #creatureTextContainer {
+            margin: 12px 18px 18px;
+        }
+
         .creature-text {
             font-size: 13px;
             color: #334155;
             line-height: 1.6;
-            margin-top: 12px;
             padding: 12px 14px;
             background: #f8fafc;
             border-radius: 10px;
             border-left: 4px solid #2a5298;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
         }
 
-        .action-buttons {
+        .creature-title-row {
             display: flex;
-            gap: 10px;
-            margin-top: 18px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin: 0 18px 10px;
         }
 
+        .creature-title-row .creature-name {
+            margin: 0;
+        }
+
+        .creature-cost-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            height: 34px;
+            padding: 0 8px;
+            border-radius: 999px;
+            background: rgba(30,60,114,0.08);
+            border: 1px solid rgba(30,60,114,0.12);
+            font-weight: 700;
+            color: #1e3c72;
+            font-size: 13px;
+        }
         @media (max-width: 600px) {
             body {
                 padding: 14px;
@@ -515,31 +551,33 @@
         </div>
 
     <div class="creature-section" id="creatureSection">
-            <img class="card-preview-image" id="creatureImage" src="" alt="Creature art">
+            <div class="creature-card-shell">
+                <img class="card-preview-image" id="creatureImage" src="" alt="Creature art">
 
-            <div class="creature-name" id="creatureName"></div>
+                <div class="creature-name" id="creatureName"></div>
 
-            <div class="creature-stat">
-                <span class="label" data-i18n="labelType">Tipo:</span>
-                <span id="creatureType"></span>
-            </div>
+                <div class="creature-stat">
+                    <span class="label" data-i18n="labelType">Tipo:</span>
+                    <span id="creatureType"></span>
+                </div>
 
-            <div class="creature-stat">
-                <span class="label" data-i18n="labelCMC">Custo de Mana:</span>
-                <span id="creatureCMC"></span>
-            </div>
+                <div class="creature-stat">
+                    <span class="label" data-i18n="labelCMC">Custo de Mana:</span>
+                    <span id="creatureCMC"></span>
+                </div>
 
-            <div class="creature-stat">
-                <span class="label" data-i18n="labelColors">Cores:</span>
-                <span id="creatureColors"></span>
-            </div>
+                <div class="creature-stat">
+                    <span class="label" data-i18n="labelColors">Cores:</span>
+                    <span id="creatureColors"></span>
+                </div>
 
-            <div id="creatureTextContainer"></div>
+                <div id="creatureTextContainer"></div>
 
-            <div class="action-buttons mobile-hide-when-drawer">
-                <button class="action-btn thermer" id="printBtn" data-i18n="printBtn">🖨️ Imprimir</button>
-                <a class="action-btn scryfall" id="scryfallLink" target="_blank" data-i18n="viewScryfall">Ver no Scryfall</a>
-                <button class="action-btn again" id="againBtn" data-i18n="generateAnother">Gerar Outra</button>
+                <div class="action-buttons mobile-hide-when-drawer">
+                    <button class="action-btn thermer" id="printBtn" data-i18n="printBtn">🖨️ Imprimir</button>
+                    <a class="action-btn scryfall" id="scryfallLink" target="_blank" data-i18n="viewScryfall">Ver no Scryfall</a>
+                    <button class="action-btn again" id="againBtn" data-i18n="generateAnother">Gerar Outra</button>
+                </div>
             </div>
         </div>
 
@@ -1189,44 +1227,6 @@
                 if (imageOnlyDesktop) imageOnlyDesktop.checked = imageOnlyMobile.checked;
                 saveFilterState();
             }
-
-            function closeDrawer() {
-                if (!filterMenu || !filterOverlay) return;
-                filterMenu.classList.remove('open');
-                filterOverlay.classList.remove('open');
-                filterToggle && filterToggle.setAttribute('aria-expanded', 'false');
-                filterMenu.setAttribute('aria-hidden', 'true');
-            }
-
-            function openDrawer() {
-                if (!filterMenu || !filterOverlay) return;
-                filterMenu.classList.add('open');
-                filterOverlay.classList.add('open');
-                filterToggle && filterToggle.setAttribute('aria-expanded', 'true');
-                filterMenu.setAttribute('aria-hidden', 'false');
-            }
-
-            if (filterToggle) {
-                filterToggle.addEventListener('click', () => {
-                    const expanded = filterToggle.getAttribute('aria-expanded') === 'true';
-                    expanded ? closeDrawer() : openDrawer();
-                });
-            }
-
-            if (includeDesktop) includeDesktop.addEventListener('change', syncFromDesktopToMobile);
-            if (imageOnlyDesktop) imageOnlyDesktop.addEventListener('change', syncFromDesktopToMobile);
-            if (includeMobile) includeMobile.addEventListener('change', syncFromMobileToDesktop);
-            if (imageOnlyMobile) imageOnlyMobile.addEventListener('change', syncFromMobileToDesktop);
-
-            if (filterOverlay) filterOverlay.addEventListener('click', closeDrawer);
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeDrawer();
-            });
-        }
-
-        function bindAdditionalMomirActions() {
-            document.getElementById('printQuantity')?.addEventListener('change', saveFilterState);
-            document.getElementById('repeatBtn')?.addEventListener('click', repeatLastSearch);
             document.getElementById('printBtn')?.addEventListener('click', printWithThermer);
             document.getElementById('printSurpriseBtn')?.addEventListener('click', printSurprise);
             document.getElementById('revealBtn')?.addEventListener('click', revealSurprise);
