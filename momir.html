@@ -863,11 +863,17 @@
 
         function selectCMC(cmc) {
             selectedCMC = cmc;
+            const cmcButton = document.querySelector(`[data-cmc="${cmc}"]`);
             document.querySelectorAll('.cmc-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            document.querySelector(`[data-cmc="${cmc}"]`).classList.add('active');
-            document.getElementById('generateBtn').disabled = false;
+            if (cmcButton) {
+                cmcButton.classList.add('active');
+            }
+            const generateBtn = document.getElementById('generateBtn');
+            if (generateBtn) {
+                generateBtn.disabled = false;
+            }
             const generateAndPrintBtn = document.getElementById('generateAndPrintBtn');
             if (generateAndPrintBtn) {
                 generateAndPrintBtn.style.display = 'block';
@@ -1124,8 +1130,8 @@
         });
 
         // Initialize
-        loadFilterState();
         initCMCButtons();
+        loadFilterState();
         populateMomirSetSelect();
         setupMobileFilterMenu();
         bindAdditionalMomirActions();
