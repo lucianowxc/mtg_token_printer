@@ -487,36 +487,24 @@ async function fetchRandomCreatureByCMC(cmc, options = {}) {
     return null;
   }
 
-  const selectedSetCodes = normalizeSetList(options.sets || options.setCodes || options.setsList);
-  const queryVariants = [];
+  const query = buildMomirQuery(cmcValue, options);
 
-  if (selectedSetCodes.length > 0) {
-    queryVariants.push(buildMomirQuery(cmcValue, options));
-    queryVariants.push(buildMomirQuery(cmcValue, { ...options, sets: "" }));
-  } else {
-    queryVariants.push(buildMomirQuery(cmcValue, options));
-  }
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const res = await fetch(
+      `https://api.scryfall.com/cards/random?q=${encodeURIComponent(query)}`,
+      { headers: SCRYFALL_HEADERS }
+    );
 
-  const uniqueQueries = [...new Set(queryVariants.filter(Boolean))];
+    if (!res.ok) {
+      continue;
+    }
 
-  for (const query of uniqueQueries) {
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      const res = await fetch(
-        `https://api.scryfall.com/cards/random?q=${encodeURIComponent(query)}`,
-        { headers: SCRYFALL_HEADERS }
-      );
+    const creature = await res.json();
+    if (!creature || creature.object === 'error') continue;
 
-      if (!res.ok) {
-        continue;
-      }
-
-      const creature = await res.json();
-      if (!creature || creature.object === 'error') continue;
-
-      const returnedCmc = Number(creature.cmc ?? creature.mana_value ?? 0);
-      if (Number.isFinite(returnedCmc) && returnedCmc === cmcValue) {
-        return creature;
-      }
+    const returnedCmc = Number(creature.cmc ?? creature.mana_value ?? 0);
+    if (Number.isFinite(returnedCmc) && returnedCmc === cmcValue) {
+      return creature;
     }
   }
 

@@ -579,7 +579,7 @@
         }
 
         function ensureSelectedSetsCurrent() {
-            if (!selectedSets || selectedSets.length === 0) {
+            if (!selectedSets) {
                 selectedSets = [...allMomirSetCodes];
             }
             selectedSets = selectedSets
@@ -638,9 +638,6 @@
                     if (checkbox.checked) current.add(code);
                     else current.delete(code);
                     selectedSets = [...current];
-                    if (selectedSets.length === 0) {
-                        selectedSets = [...allMomirSetCodes];
-                    }
                 });
 
                 const label = document.createElement('span');
@@ -779,9 +776,6 @@
 
         function parseFilterState() {
             ensureSelectedSetsCurrent();
-            if (selectedSets.length === 0) {
-                selectedSets = [...allMomirSetCodes];
-            }
             excludeUnsets = document.getElementById('excludeUnsets').checked;
             excludeUniversesBeyond = document.getElementById('excludeUniversesBeyond').checked;
         }
