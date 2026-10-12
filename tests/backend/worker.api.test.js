@@ -170,4 +170,32 @@ describe("Worker API", () => {
     expect(response.status).toBe(200);
     expect(body.image_uris?.normal).toBe("https://cards.scryfall.io/normal/front/test.jpg");
   });
+
+  it("builds filtered Momir queries with selected sets and exclusions", async () => {
+    const captured = [];
+    global.fetch = vi.fn(async (url) => {
+      captured.push(String(url));
+      return jsonResponse({
+        id: "momir-set-test",
+        name: "Test Creature",
+        type_line: "Creature",
+        oracle_text: "Test text",
+        cmc: 3,
+        scryfall_uri: "https://scryfall.com/card/test/1",
+      });
+    });
+
+    const request = new Request("https://example.com/api/momir?cmc=3&sets=m10,m21&exclude_unsets=true&exclude_universes_beyond=true");
+    const response = await worker.fetch(request);
+    const body = await readJson(response);
+
+    expect(response.status).toBe(200);
+    expect(body.name).toBe("Test Creature");
+    expect(captured[0]).toContain("type%3Acreature");
+    expect(captured[0]).toContain("cmc%3A3");
+    expect(captured[0]).toContain("set%3Am10");
+    expect(captured[0]).toContain("set%3Am21");
+    expect(captured[0]).toContain("-is%3Aunset");
+    expect(captured[0]).toContain("-is%3Auniversesbeyond");
+  });
 });

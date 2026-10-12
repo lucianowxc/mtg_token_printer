@@ -481,13 +481,13 @@ function toForcedObject(arr) {
   return obj;
 }
 
-async function fetchRandomCreatureByCMC(cmc) {
+async function fetchRandomCreatureByCMC(cmc, options = {}) {
   const cmcValue = parseInt(cmc, 10);
   if (isNaN(cmcValue) || cmcValue < 0 || cmcValue > 20) {
     return null;
   }
 
-  const query = `type:creature cmc:${cmcValue}`;
+  const query = buildMomirQuery(cmcValue, options);
   const res = await fetch(
     `https://api.scryfall.com/cards/random?q=${encodeURIComponent(query)}`,
     { headers: SCRYFALL_HEADERS }
@@ -495,6 +495,52 @@ async function fetchRandomCreatureByCMC(cmc) {
 
   if (!res.ok) return null;
   return res.json();
+}
+
+function normalizeSetList(setValue) {
+  if (!setValue) return [];
+  return setValue
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function buildMomirQuery(cmcValue, options = {}) {
+  const setCodes = normalizeSetList(options.sets || options.setCodes || options.setsList);
+  const excludeUnsets = Boolean(options.exclude_unsets || options.excludeUnsets);
+  const excludeUniversesBeyond = Boolean(
+    options.exclude_universes_beyond || options.excludeUniversesBeyond
+  );
+
+  const clauses = [`type:creature`, `cmc:${cmcValue}`];
+
+  if (setCodes.length > 0) {
+    clauses.push(`set:${setCodes.join(' or set:')}`);
+  }
+
+  if (excludeUnsets) {
+    clauses.push('-is:unset');
+  }
+
+  if (excludeUniversesBeyond) {
+    clauses.push('-is:universesbeyond');
+  }
+
+  return clauses.join(' ');
+}
+
+function buildMomirEndpointInfo(url) {
+  const cmc = url.searchParams.get("cmc");
+  const sets = url.searchParams.get("sets") || "";
+  const excludeUnsets = url.searchParams.get("exclude_unsets") === "true";
+  const excludeUniversesBeyond = url.searchParams.get("exclude_universes_beyond") === "true";
+
+  return {
+    cmc,
+    sets,
+    exclude_unsets: excludeUnsets,
+    exclude_universes_beyond: excludeUniversesBeyond,
+  };
 }
 
 // Generate Thermer JSON specifically for Momir creatures (includes image)
@@ -677,18 +723,18 @@ export default {
     }
 
     if (url.pathname === "/api/momir") {
-      const cmc = url.searchParams.get("cmc");
-      if (!cmc) return jsonResponse({ error: "Missing 'cmc' parameter" }, 400);
-      const creature = await fetchRandomCreatureByCMC(cmc);
-      if (!creature) return jsonResponse({ error: `No creature found with CMC ${cmc}` }, 404);
+      const apiInfo = buildMomirEndpointInfo(url);
+      if (!apiInfo.cmc) return jsonResponse({ error: "Missing 'cmc' parameter" }, 400);
+      const creature = await fetchRandomCreatureByCMC(apiInfo.cmc, apiInfo);
+      if (!creature) return jsonResponse({ error: `No creature found with CMC ${apiInfo.cmc}` }, 404);
       return jsonResponse(creature);
     }
 
     if (url.pathname === "/api/momir/print") {
-      const cmc = url.searchParams.get("cmc");
-      if (!cmc) return jsonResponse({ error: "Missing 'cmc' parameter" }, 400);
-      const creature = await fetchRandomCreatureByCMC(cmc);
-      if (!creature) return jsonResponse({ error: `No creature found with CMC ${cmc}` }, 404);
+      const apiInfo = buildMomirEndpointInfo(url);
+      if (!apiInfo.cmc) return jsonResponse({ error: "Missing 'cmc' parameter" }, 400);
+      const creature = await fetchRandomCreatureByCMC(apiInfo.cmc, apiInfo);
+      if (!creature) return jsonResponse({ error: `No creature found with CMC ${apiInfo.cmc}` }, 404);
       const thermerArray = generateMomirThermerJson(creature);
       return jsonResponse(toForcedObject(thermerArray));
     }

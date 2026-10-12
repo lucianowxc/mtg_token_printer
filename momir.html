@@ -456,6 +456,7 @@
     <div class="filter-menu" id="momirFilterMenu" aria-hidden="true">
         <div class="filter-panel" id="momirFilterPanel">
             <div class="drawer-panel-title">⚙️ Opções Momir</div>
+
             <div class="filter-row">
                 <label for="includeImageCheckboxMobile" data-i18n="includeImage">🖼️ Incluir Imagem na Impressão</label>
                 <input type="checkbox" id="includeImageCheckboxMobile">
@@ -464,13 +465,17 @@
                 <label for="imageOnlyCheckboxMobile" data-i18n="imageOnly">🖼️ Somente Imagem (Scryfall)</label>
                 <input type="checkbox" id="imageOnlyCheckboxMobile">
             </div>
-            <div class="filter-row filter-actions">
-                <button class="action-btn thermer" id="printBtnMobile" data-i18n="printBtn">🖨️ Imprimir</button>
-                <button class="action-btn again" id="generateBtnMobile" data-i18n="generateAnother">Gerar Outra</button>
+            <div class="filter-row" style="display:block;">
+                <label for="momirSetsSelect" style="display:block; margin-bottom:8px;">Sets disponíveis</label>
+                <select id="momirSetsSelect" multiple size="6" aria-label="Sets disponíveis" style="width:100%;"></select>
             </div>
-            <div class="filter-row filter-actions" id="surpriseMobileActions" style="display:none;">
-                <button class="action-btn thermer" id="printSurpriseBtnMobile" data-i18n="printSurpriseBtn">🖨️ Imprimir Surpresa</button>
-                <button class="action-btn scryfall" id="revealBtnMobile" data-i18n="revealBtn">👁️ Revelar</button>
+            <div class="filter-row">
+                <label for="excludeUnsets">Excluir Un-sets</label>
+                <input type="checkbox" id="excludeUnsets">
+            </div>
+            <div class="filter-row">
+                <label for="excludeUniversesBeyond">Excluir Universes Beyond</label>
+                <input type="checkbox" id="excludeUniversesBeyond">
             </div>
         </div>
     </div>
@@ -539,6 +544,47 @@
         let selectedCMC = null;
         let currentCreature = null;
         let lastUsedCMC = null;
+        let selectedSets = [];
+        let excludeUnsets = false;
+        let excludeUniversesBeyond = false;
+
+        const MOMIR_DEFAULT_SETS = [
+            "lea","2ed","3ed","4bb","4ed","5ed","6ed","7ed","8ed","9ed","10e","m10","m11","m12","m13","m14","m15","m19","m20","m21","m22","m23","m24","m25","war","mid","one","woe","vow","otj","thb","eld","afr","znr","ori","ravn","dmu","snc","dsk","ltr","mh1","mh2","mh3","moc","mom","sld","cmm","hbg","cmb","pca"
+        ];
+
+        function getFilterSelections() {
+            const setSelect = document.getElementById('momirSetsSelect');
+            const selected = Array.from(setSelect.selectedOptions).map((option) => option.value);
+            return {
+                setCodes: selected.length ? selected : MOMIR_DEFAULT_SETS,
+                excludeUnsets: document.getElementById('excludeUnsets').checked,
+                excludeUniversesBeyond: document.getElementById('excludeUniversesBeyond').checked,
+            };
+        }
+
+        function populateMomirSetSelect() {
+            const select = document.getElementById('momirSetsSelect');
+            if (!select) return;
+
+            const commonSets = [
+                'lea','2ed','3ed','4bb','4ed','5ed','6ed','7ed','8ed','9ed','10e','m10','m11','m12','m13','m14','m15','m19','m20','m21','m22','m23','m24','m25','war','mid','one','woe','vow','otj','thb','eld','afr','znr','ori','ravn','dmu','snc','dsk','ltr','mh1','mh2','mh3','moc','mom','sld','cmm','hbg','cmb','pca'
+            ];
+
+            commonSets.forEach((setCode) => {
+                const option = document.createElement('option');
+                option.value = setCode;
+                option.textContent = setCode.toUpperCase();
+                option.selected = true;
+                select.appendChild(option);
+            });
+        }
+
+        function parseFilterState() {
+            const setSelect = document.getElementById('momirSetsSelect');
+            selectedSets = Array.from(setSelect.selectedOptions).map((option) => option.value);
+            excludeUnsets = document.getElementById('excludeUnsets').checked;
+            excludeUniversesBeyond = document.getElementById('excludeUniversesBeyond').checked;
+        }
 
         // Initialize CMC buttons
         function initCMCButtons() {
@@ -570,6 +616,7 @@
             const creatureEl = document.getElementById('creatureSection');
             const surpriseEl = document.getElementById('surpriseSection');
             const isSurpriseMode = document.getElementById('surpriseModeCheckbox').checked;
+            parseFilterState();
 
             errorEl.classList.remove('active');
             loadingEl.classList.add('active');
@@ -577,25 +624,29 @@
             surpriseEl.classList.remove('active');
 
             try {
-                const response = await fetch(
-                    `${API_BASE}/api/momir?cmc=${selectedCMC}`
-                );
+                const params = new URLSearchParams({
+                    cmc: String(selectedCMC),
+                });
+
+                if (selectedSets.length) {
+                    params.set('sets', selectedSets.join(','));
+                }
+                if (excludeUnsets) params.set('exclude_unsets', 'true');
+                if (excludeUniversesBeyond) params.set('exclude_universes_beyond', 'true');
+
+                const response = await fetch(`${API_BASE}/api/momir?${params.toString()}`);
 
                 if (!response.ok) {
                     throw new Error(`${t("errorFetchCreature")}: ${response.status}`);
                 }
 
                 const creature = await response.json();
-                
-                // Store the CMC used for this generation (for printing)
                 lastUsedCMC = selectedCMC;
-                
+
                 if (isSurpriseMode) {
-                    // Surprise mode: store creature but don't display preview
                     currentCreature = creature;
                     surpriseEl.classList.add('active');
                 } else {
-                    // Normal mode: display full preview
                     displayCreature(creature);
                 }
             } catch (err) {
@@ -700,19 +751,12 @@
 
         function setupMobileFilterMenu() {
             const filterToggle = document.getElementById('momirFilterToggle');
-            const filterPanel = document.getElementById('momirFilterPanel');
             const filterMenu = document.getElementById('momirFilterMenu');
             const filterOverlay = document.getElementById('momirFilterOverlay');
-
             const includeDesktop = document.getElementById('includeImageCheckbox');
             const imageOnlyDesktop = document.getElementById('imageOnlyCheckbox');
             const includeMobile = document.getElementById('includeImageCheckboxMobile');
             const imageOnlyMobile = document.getElementById('imageOnlyCheckboxMobile');
-
-            const printBtnMobile = document.getElementById('printBtnMobile');
-            const generateBtnMobile = document.getElementById('generateBtnMobile');
-            const printSurpriseBtnMobile = document.getElementById('printSurpriseBtnMobile');
-            const revealBtnMobile = document.getElementById('revealBtnMobile');
 
             function syncFromDesktopToMobile() {
                 includeMobile.checked = includeDesktop.checked;
@@ -723,9 +767,6 @@
                 includeDesktop.checked = includeMobile.checked;
                 imageOnlyDesktop.checked = imageOnlyMobile.checked;
             }
-
-            syncFromDesktopToMobile();
-            syncSurpriseMobileActions();
 
             function closeDrawer() {
                 filterMenu.classList.remove('open');
@@ -744,12 +785,7 @@
             if (filterToggle) {
                 filterToggle.addEventListener('click', () => {
                     const expanded = filterToggle.getAttribute('aria-expanded') === 'true';
-                    if (expanded) {
-                        closeDrawer();
-                    } else {
-                        openDrawer();
-                    }
-                    syncSurpriseMobileActions();
+                    expanded ? closeDrawer() : openDrawer();
                 });
             }
 
@@ -757,22 +793,6 @@
             imageOnlyDesktop.addEventListener('change', syncFromDesktopToMobile);
             includeMobile.addEventListener('change', syncFromMobileToDesktop);
             imageOnlyMobile.addEventListener('change', syncFromMobileToDesktop);
-
-            printBtnMobile.addEventListener('click', () => {
-                syncFromMobileToDesktop();
-                printWithThermer();
-                closeDrawer();
-            });
-            generateBtnMobile.addEventListener('click', generateCreature);
-            printSurpriseBtnMobile.addEventListener('click', () => {
-                syncFromMobileToDesktop();
-                printSurprise();
-                closeDrawer();
-            });
-            revealBtnMobile.addEventListener('click', () => {
-                revealSurprise();
-                closeDrawer();
-            });
 
             filterOverlay && filterOverlay.addEventListener('click', closeDrawer);
             document.addEventListener('keydown', (e) => {
@@ -792,7 +812,8 @@
 
         // Initialize
         initCMCButtons();
+        populateMomirSetSelect();
         setupMobileFilterMenu();
-    </script>
+   </script>
 </body>
 </html>
