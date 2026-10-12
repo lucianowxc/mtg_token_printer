@@ -198,4 +198,64 @@ describe("Worker API", () => {
     expect(captured[0]).toContain("-is%3Aunset");
     expect(captured[0]).toContain("-is%3Auniversesbeyond");
   });
+
+  it("keeps retrying Momir generation until the creature matches the requested CMC", async () => {
+    const responses = [
+      jsonResponse({
+        id: "momir-cmc-fail-1",
+        name: "Wrong Creature",
+        type_line: "Creature",
+        oracle_text: "Wrong text",
+        cmc: 4,
+        scryfall_uri: "https://scryfall.com/card/test/4",
+      }),
+      jsonResponse({
+        id: "momir-cmc-pass-1",
+        name: "Correct Creature",
+        type_line: "Creature",
+        oracle_text: "Right text",
+        cmc: 3,
+        scryfall_uri: "https://scryfall.com/card/test/3",
+      }),
+    ];
+
+    global.fetch = vi.fn(async () => responses.shift() || jsonResponse({ object: "error" }, 404));
+
+    const request = new Request("https://example.com/api/momir?cmc=3");
+    const response = await worker.fetch(request);
+    const body = await readJson(response);
+
+    expect(response.status).toBe(200);
+    expect(body.name).toBe("Correct Creature");
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns a live Scryfall set catalog from /api/sets", async () => {
+    global.fetch = vi.fn(async (url) => {
+      if (String(url).includes("https://api.scryfall.com/sets")) {
+        return jsonResponse({
+          data: [
+            { code: "m10", name: "Magic 2010", released_at: "2009-07-15", digital: false, set_type: "core" },
+            { code: "m21", name: "Core Set 2021", released_at: "2020-07-17", digital: false, set_type: "core" },
+            { code: "tmd", name: "Token Magic", released_at: "2020-01-01", digital: false, set_type: "token" },
+          ],
+        });
+      }
+
+      return jsonResponse({ object: "error" }, 404);
+    });
+
+    const request = new Request("https://example.com/api/sets");
+    const response = await worker.fetch(request);
+    const body = await readJson(response);
+
+    expect(response.status).toBe(200);
+    expect(body.sets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "m10" }),
+        expect.objectContaining({ code: "m21" }),
+      ])
+    );
+    expect(body.sets.some((set) => set.code === "tmd")).toBe(false);
+  });
 });

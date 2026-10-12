@@ -552,6 +552,62 @@
             "lea","2ed","3ed","4bb","4ed","5ed","6ed","7ed","8ed","9ed","10e","m10","m11","m12","m13","m14","m15","m19","m20","m21","m22","m23","m24","m25","war","mid","one","woe","vow","otj","thb","eld","afr","znr","ori","ravn","dmu","snc","dsk","ltr","mh1","mh2","mh3","moc","mom","sld","cmm","hbg","cmb","pca"
         ];
 
+        function getAvailableMomirSetCodes(sets) {
+            return (sets || [])
+                .filter((set) => {
+                    if (!set || !set.code || !set.name) return false;
+                    if (!set.released_at) return false;
+                    if (set.digital) return false;
+                    if (set.set_type === 'token' || set.set_type === 'memorabilia') return false;
+                    return true;
+                })
+                .map((set) => set.code.toLowerCase())
+                .filter((code, index, arr) => arr.indexOf(code) === index)
+                .sort((a, b) => a.localeCompare(b));
+        }
+
+        async function populateMomirSetSelect() {
+            const select = document.getElementById('momirSetsSelect');
+            if (!select) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/sets`);
+                if (!response.ok) {
+                    throw new Error('Unable to load sets from worker');
+                }
+
+                const data = await response.json();
+                const setCodes = (data.sets || [])
+                    .map((set) => set.code)
+                    .filter(Boolean)
+                    .map((code) => String(code).toLowerCase())
+                    .filter((code, index, arr) => arr.indexOf(code) === index)
+                    .sort((a, b) => a.localeCompare(b));
+
+                if (setCodes.length === 0) {
+                    throw new Error('No valid sets returned');
+                }
+
+                select.innerHTML = '';
+                setCodes.forEach((setCode) => {
+                    const option = document.createElement('option');
+                    option.value = setCode;
+                    option.textContent = setCode.toUpperCase();
+                    option.selected = true;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                select.innerHTML = '';
+                MOMIR_DEFAULT_SETS.forEach((setCode) => {
+                    const option = document.createElement('option');
+                    option.value = setCode;
+                    option.textContent = setCode.toUpperCase();
+                    option.selected = true;
+                    select.appendChild(option);
+                });
+            }
+        }
+
         function getFilterSelections() {
             const setSelect = document.getElementById('momirSetsSelect');
             const selected = Array.from(setSelect.selectedOptions).map((option) => option.value);
@@ -562,26 +618,13 @@
             };
         }
 
-        function populateMomirSetSelect() {
-            const select = document.getElementById('momirSetsSelect');
-            if (!select) return;
-
-            const commonSets = [
-                'lea','2ed','3ed','4bb','4ed','5ed','6ed','7ed','8ed','9ed','10e','m10','m11','m12','m13','m14','m15','m19','m20','m21','m22','m23','m24','m25','war','mid','one','woe','vow','otj','thb','eld','afr','znr','ori','ravn','dmu','snc','dsk','ltr','mh1','mh2','mh3','moc','mom','sld','cmm','hbg','cmb','pca'
-            ];
-
-            commonSets.forEach((setCode) => {
-                const option = document.createElement('option');
-                option.value = setCode;
-                option.textContent = setCode.toUpperCase();
-                option.selected = true;
-                select.appendChild(option);
-            });
-        }
-
         function parseFilterState() {
             const setSelect = document.getElementById('momirSetsSelect');
+            const allOptions = Array.from(setSelect.options).map((option) => option.value);
             selectedSets = Array.from(setSelect.selectedOptions).map((option) => option.value);
+            if (selectedSets.length === 0) {
+                selectedSets = allOptions;
+            }
             excludeUnsets = document.getElementById('excludeUnsets').checked;
             excludeUniversesBeyond = document.getElementById('excludeUniversesBeyond').checked;
         }

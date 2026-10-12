@@ -487,14 +487,49 @@ async function fetchRandomCreatureByCMC(cmc, options = {}) {
     return null;
   }
 
-  const query = buildMomirQuery(cmcValue, options);
-  const res = await fetch(
-    `https://api.scryfall.com/cards/random?q=${encodeURIComponent(query)}`,
-    { headers: SCRYFALL_HEADERS }
-  );
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const query = buildMomirQuery(cmcValue, options);
+    const res = await fetch(
+      `https://api.scryfall.com/cards/random?q=${encodeURIComponent(query)}`,
+      { headers: SCRYFALL_HEADERS }
+    );
 
-  if (!res.ok) return null;
-  return res.json();
+    if (!res.ok) return null;
+
+    const creature = await res.json();
+    if (!creature || creature.object === 'error') return null;
+
+    const returnedCmc = Number(creature.cmc ?? creature.mana_value ?? 0);
+    if (Number.isFinite(returnedCmc) && returnedCmc === cmcValue) {
+      return creature;
+    }
+  }
+
+  return null;
+}
+
+async function fetchAvailableSets() {
+  const res = await fetch("https://api.scryfall.com/sets", {
+    headers: SCRYFALL_HEADERS,
+  });
+
+  if (!res.ok) return [];
+
+  const json = await res.json();
+  return (json.data || [])
+    .filter((set) => {
+      if (!set || !set.code || !set.name || !set.released_at) return false;
+      if (set.digital) return false;
+      if (set.set_type === "token" || set.set_type === "memorabilia") return false;
+      return true;
+    })
+    .map((set) => ({
+      code: String(set.code).toLowerCase(),
+      name: set.name,
+      released_at: set.released_at,
+      set_type: set.set_type,
+    }))
+    .sort((a, b) => a.code.localeCompare(b.code));
 }
 
 function normalizeSetList(setValue) {
@@ -515,7 +550,8 @@ function buildMomirQuery(cmcValue, options = {}) {
   const clauses = [`type:creature`, `cmc:${cmcValue}`];
 
   if (setCodes.length > 0) {
-    clauses.push(`set:${setCodes.join(' or set:')}`);
+    const setGroup = `(${setCodes.map((code) => `set:${code}`).join(' or ')})`;
+    clauses.push(setGroup);
   }
 
   if (excludeUnsets) {
@@ -644,6 +680,11 @@ export default {
       return resp;
     }
 
+    if (url.pathname === "/api/sets") {
+      const sets = await fetchAvailableSets();
+      return jsonResponse({ sets });
+    }
+
     if (url.pathname === "/api/preview") {
       if (!cardName) return jsonResponse({ error: "Missing 'card' parameter" }, 400);
       const card = await fetchCardData(cardName);
@@ -753,7 +794,8 @@ export default {
         "/api/search/print/by-id?id=CARD_ID",
         "/api/search/image/by-id?id=CARD_ID",
         "/api/momir?cmc=X",
-        "/api/momir/print?cmc=X"
+        "/api/momir/print?cmc=X",
+        "/api/sets"
       ],
     });
   },
