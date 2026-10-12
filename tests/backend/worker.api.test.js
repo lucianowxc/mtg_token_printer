@@ -258,4 +258,23 @@ describe("Worker API", () => {
     );
     expect(body.sets.some((set) => set.code === "tmd")).toBe(false);
   });
+
+  it("builds Thermer payload for /api/custom/print-image", async () => {
+    const base64 = "dGVzdA==";
+    const request = new Request(
+      `https://example.com/api/custom/print-image?img=${encodeURIComponent(base64)}&mime=image/jpeg&quantity=2`
+    );
+
+    const response = await worker.fetch(request);
+    const body = await readJson(response);
+
+    expect(response.status).toBe(200);
+    expect(body["1"]).toEqual(
+      expect.objectContaining({
+        type: 1,
+        path: `data:image/jpeg;base64,${base64}`,
+      })
+    );
+    expect(Object.keys(body).length).toBe(4);
+  });
 });

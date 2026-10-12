@@ -169,6 +169,12 @@ input[type="range"] {
   color: #1d4ed8;
 }
 
+.action-btn.thermer {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border-color: #16a34a;
+}
+
 .action-btn.danger {
   background: #fee2e2;
   color: #991b1b;
@@ -195,6 +201,22 @@ canvas {
   background: white;
   border: 2px solid #dfe7f4;
   cursor: crosshair;
+  touch-action: none;
+}
+
+.android-hint {
+  display: none;
+  background: #ffedd5;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.android-hint.active {
+  display: block;
 }
 
 @media (max-width: 860px) {

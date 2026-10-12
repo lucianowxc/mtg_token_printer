@@ -671,6 +671,31 @@ function generateMomirThermerJson(creature) {
   return output;
 }
 
+function generateCustomImageThermerJson({ base64Image, mime = "image/jpeg", quantity = 1 }) {
+  const safeMime = /^image\/(jpeg|png|webp)$/i.test(mime) ? mime.toLowerCase() : "image/jpeg";
+  const safeQuantity = Math.min(Math.max(parseInt(quantity, 10) || 1, 1), 10);
+  const dataUrl = `data:${safeMime};base64,${base64Image}`;
+
+  const output = [];
+  for (let i = 0; i < safeQuantity; i += 1) {
+    output.push({
+      type: 1,
+      path: dataUrl,
+      align: 1,
+    });
+
+    output.push({
+      type: 0,
+      content: " <br /> ",
+      bold: 0,
+      align: 1,
+      format: 0,
+    });
+  }
+
+  return output;
+}
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -785,6 +810,21 @@ export default {
       return jsonResponse(toForcedObject(thermerArray));
     }
 
+    if (url.pathname === "/api/custom/print-image") {
+      const img = (url.searchParams.get("img") || "").trim();
+      if (!img) return jsonResponse({ error: "Missing 'img' parameter" }, 400);
+
+      const mime = (url.searchParams.get("mime") || "image/jpeg").trim();
+      const quantity = parseInt(url.searchParams.get("quantity") || "1", 10);
+      const thermerArray = generateCustomImageThermerJson({
+        base64Image: img,
+        mime,
+        quantity,
+      });
+
+      return jsonResponse(toForcedObject(thermerArray));
+    }
+
     if (url.pathname === "/api/momir") {
       const apiInfo = buildMomirEndpointInfo(url);
       if (!apiInfo.cmc) return jsonResponse({ error: "Missing 'cmc' parameter" }, 400);
@@ -815,6 +855,7 @@ export default {
         "/api/search/print?card=NAME",
         "/api/search/print/by-id?id=CARD_ID",
         "/api/search/image/by-id?id=CARD_ID",
+        "/api/custom/print-image?img=BASE64&mime=image/jpeg",
         "/api/momir?cmc=X",
         "/api/momir/print?cmc=X",
         "/api/sets"

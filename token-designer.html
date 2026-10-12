@@ -50,9 +50,15 @@
         </div>
 
         <div class="panel-block actions-block">
+          <label for="printQuantity">Cópias na Thermer</label>
+          <input id="printQuantity" type="number" min="1" max="10" value="1" />
+          <button id="printThermerBtn" class="action-btn thermer">🖨️ Imprimir na Thermer</button>
           <button id="undoBtn" class="action-btn secondary">↶ Desfazer</button>
           <button id="clearBtn" class="action-btn danger">Limpar</button>
           <button id="downloadBtn" class="action-btn primary">⬇️ Exportar PNG</button>
+          <div class="android-hint" id="androidThermerHint">
+            ⚠️ Se o app não abrir automaticamente no Android, abra o Thermer manualmente e tente novamente.
+          </div>
         </div>
       </aside>
 
@@ -64,6 +70,7 @@
     </main>
   </div>
 
+  <script src="shared-print.js"></script>
   <script src="token-designer.js"></script>
 </body>
 </html>

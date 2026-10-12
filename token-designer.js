@@ -3,9 +3,16 @@ const ctx = canvas.getContext('2d');
 const colorButtons = document.querySelectorAll('.swatch');
 const toolButtons = document.querySelectorAll('.tool-btn');
 const lineWidthInput = document.getElementById('lineWidth');
+const printQuantityInput = document.getElementById('printQuantity');
+const printThermerBtn = document.getElementById('printThermerBtn');
 const undoBtn = document.getElementById('undoBtn');
 const clearBtn = document.getElementById('clearBtn');
 const downloadBtn = document.getElementById('downloadBtn');
+
+const API_BASE =
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:8787'
+    : 'https://mtg-token-printer-worker.luciano-wxc.workers.dev';
 
 const state = {
   tool: 'pen',
@@ -15,6 +22,7 @@ const state = {
   startX: 0,
   startY: 0,
   history: [],
+  previewBaseImageData: null,
 };
 
 const WHITE = '#ffffff';
@@ -29,17 +37,6 @@ function pushHistory() {
   if (state.history.length > 30) {
     state.history.shift();
   }
-}
-
-function restoreFromHistory() {
-  if (state.history.length === 0) return;
-  const previous = new Image();
-  const snapshot = state.history[state.history.length - 1];
-  previous.onload = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(previous, 0, 0, canvas.width, canvas.height);
-  };
-  previous.src = snapshot;
 }
 
 function setTool(tool) {
@@ -67,7 +64,45 @@ function getPointerPosition(event) {
   };
 }
 
+function drawShapePreview(tool, x, y) {
+  ctx.strokeStyle = state.color;
+  ctx.lineWidth = state.lineWidth;
+
+  if (tool === 'line') {
+    ctx.beginPath();
+    ctx.moveTo(state.startX, state.startY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    return;
+  }
+
+  if (tool === 'rect') {
+    const width = x - state.startX;
+    const height = y - state.startY;
+    ctx.strokeRect(state.startX, state.startY, width, height);
+    return;
+  }
+
+  if (tool === 'circle') {
+    const radius = Math.hypot(x - state.startX, y - state.startY);
+    ctx.beginPath();
+    ctx.arc(state.startX, state.startY, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    return;
+  }
+
+  if (tool === 'triangle') {
+    ctx.beginPath();
+    ctx.moveTo(state.startX, state.startY);
+    ctx.lineTo(x, y);
+    ctx.lineTo(state.startX - (x - state.startX), y);
+    ctx.closePath();
+    ctx.stroke();
+  }
+}
+
 function beginDraw(event) {
+  event.preventDefault();
   const { x, y } = getPointerPosition(event);
   state.drawing = true;
   state.startX = x;
@@ -98,11 +133,16 @@ function beginDraw(event) {
     return;
   }
 
+  if (state.tool === 'line' || state.tool === 'rect' || state.tool === 'circle' || state.tool === 'triangle') {
+    state.previewBaseImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
+
   pushHistory();
 }
 
 function draw(event) {
   if (!state.drawing) return;
+  event.preventDefault();
 
   const { x, y } = getPointerPosition(event);
 
@@ -116,66 +156,16 @@ function draw(event) {
     return;
   }
 
-  if (state.tool === 'line') {
-    redrawCanvas();
-    ctx.strokeStyle = state.color;
-    ctx.lineWidth = state.lineWidth;
-    ctx.beginPath();
-    ctx.moveTo(state.startX, state.startY);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    return;
+  if (state.previewBaseImageData) {
+    ctx.putImageData(state.previewBaseImageData, 0, 0);
+    drawShapePreview(state.tool, x, y);
   }
-
-  if (state.tool === 'rect') {
-    redrawCanvas();
-    ctx.strokeStyle = state.color;
-    ctx.lineWidth = state.lineWidth;
-    const width = x - state.startX;
-    const height = y - state.startY;
-    ctx.strokeRect(state.startX, state.startY, width, height);
-    return;
-  }
-
-  if (state.tool === 'circle') {
-    redrawCanvas();
-    const radius = Math.hypot(x - state.startX, y - state.startY);
-    ctx.strokeStyle = state.color;
-    ctx.lineWidth = state.lineWidth;
-    ctx.beginPath();
-    ctx.arc(state.startX, state.startY, radius, 0, Math.PI * 2);
-    ctx.stroke();
-    return;
-  }
-
-  if (state.tool === 'triangle') {
-    redrawCanvas();
-    ctx.strokeStyle = state.color;
-    ctx.lineWidth = state.lineWidth;
-    ctx.beginPath();
-    ctx.moveTo(state.startX, state.startY);
-    ctx.lineTo(x, state.startY + (y - state.startY));
-    ctx.lineTo((state.startX + x) / 2, state.startY - Math.abs(y - state.startY));
-    ctx.closePath();
-    ctx.stroke();
-  }
-}
-
-function redrawCanvas() {
-  const snapshot = state.history[state.history.length - 1];
-  if (!snapshot) return;
-
-  const img = new Image();
-  img.onload = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  };
-  img.src = snapshot;
 }
 
 function endDraw() {
   if (!state.drawing) return;
   state.drawing = false;
+  state.previewBaseImageData = null;
 
   if (state.tool === 'pen' || state.tool === 'eraser') {
     ctx.beginPath();
@@ -186,6 +176,7 @@ function undo() {
   if (state.history.length <= 1) {
     fillCanvasWhite();
     state.history = [];
+    pushHistory();
     return;
   }
 
@@ -204,6 +195,65 @@ function clearCanvas() {
   fillCanvasWhite();
 }
 
+function getPrintQuantity() {
+  const raw = Number(printQuantityInput?.value || 1);
+  return Math.min(Math.max(Number.isFinite(raw) ? raw : 1, 1), 10);
+}
+
+function buildThermerImagePayload() {
+  const attempts = [
+    { size: 480, quality: 0.78 },
+    { size: 384, quality: 0.65 },
+    { size: 320, quality: 0.55 },
+    { size: 256, quality: 0.45 },
+  ];
+
+  for (const attempt of attempts) {
+    const temp = document.createElement('canvas');
+    temp.width = attempt.size;
+    temp.height = attempt.size;
+    const tctx = temp.getContext('2d');
+
+    tctx.fillStyle = WHITE;
+    tctx.fillRect(0, 0, temp.width, temp.height);
+    tctx.drawImage(canvas, 0, 0, temp.width, temp.height);
+
+    const dataUrl = temp.toDataURL('image/jpeg', attempt.quality);
+    const base64Data = dataUrl.replace(/^data:image\/jpeg;base64,/, '');
+    const estimatedLength = encodeURIComponent(base64Data).length;
+
+    if (estimatedLength <= 7000) {
+      return {
+        mime: 'image/jpeg',
+        base64Data,
+      };
+    }
+  }
+
+  throw new Error('A imagem ficou grande demais para envio direto à Thermer. Reduza os detalhes e tente novamente.');
+}
+
+function printCanvasWithThermer() {
+  if (!window.MTGPrint?.launchThermerPrint) {
+    window.alert('Integração com Thermer não disponível nesta página.');
+    return;
+  }
+
+  try {
+    const quantity = getPrintQuantity();
+    const payload = buildThermerImagePayload();
+    const endpoint = `${API_BASE}/api/custom/print-image?mime=${encodeURIComponent(payload.mime)}&quantity=${quantity}&img=${encodeURIComponent(payload.base64Data)}`;
+
+    window.MTGPrint.clearAndroidHint?.('androidThermerHint');
+    window.MTGPrint.launchThermerPrint({
+      endpoint,
+      androidHintElementId: 'androidThermerHint',
+    });
+  } catch (error) {
+    window.alert(error.message || 'Falha ao preparar impressão para a Thermer.');
+  }
+}
+
 function downloadCanvas() {
   const link = document.createElement('a');
   link.download = 'token-design.png';
@@ -214,6 +264,7 @@ function downloadCanvas() {
 canvas.addEventListener('pointerdown', beginDraw);
 canvas.addEventListener('pointermove', draw);
 canvas.addEventListener('pointerup', endDraw);
+canvas.addEventListener('pointercancel', endDraw);
 canvas.addEventListener('pointerleave', endDraw);
 
 lineWidthInput.addEventListener('input', (event) => {
@@ -231,6 +282,7 @@ colorButtons.forEach((button) => {
 undoBtn.addEventListener('click', undo);
 clearBtn.addEventListener('click', clearCanvas);
 downloadBtn.addEventListener('click', downloadCanvas);
+printThermerBtn?.addEventListener('click', printCanvasWithThermer);
 
 fillCanvasWhite();
 pushHistory();
