@@ -204,12 +204,22 @@
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-weight: 600;
+            border-radius: 10px;
+            font-weight: 700;
             font-size: 16px;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3);
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 18px rgba(30, 60, 114, 0.18);
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(30, 60, 114, 0.22);
+        }
+
+        .generate-btn.secondary {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            box-shadow: 0 8px 18px rgba(34, 197, 94, 0.18);
         }
 
         .generate-btn:active {
@@ -219,100 +229,34 @@
         .generate-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        .creature-section {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            display: none;
-        }
-
-        .creature-section.active {
-            display: block;
-        }
-
-        .creature-name {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1e3c72;
-            margin-bottom: 12px;
-        }
-
-        .creature-stat {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-
-        .creature-stat .label {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .divider {
-            height: 1px;
-            background: #e0e0e0;
-            margin: 15px 0;
-        }
-
-        .creature-text {
-            font-size: 13px;
-            color: #555;
-            line-height: 1.6;
-            margin-bottom: 10px;
-            padding: 12px;
-            background: #f8f8f8;
-            border-radius: 6px;
-            border-left: 3px solid #2a5298;
-        }
-
-        .action-buttons {
+        .primary-actions {
             display: flex;
+            flex-direction: column;
             gap: 10px;
-            margin-top: 20px;
+            margin-top: 12px;
         }
 
-        .action-btn {
-            flex: 1;
-            padding: 12px 16px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            text-align: center;
+        .filter-summary {
+            margin-top: 14px;
+            padding: 10px 12px;
+            background: #f3f6fb;
+            border: 1px solid #dfe7f4;
+            border-radius: 10px;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.4;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
         }
 
-        .action-btn.scryfall {
-            background: #667eea;
-            color: white;
-        }
-
-        .action-btn.scryfall:active {
-            background: #5568d3;
-        }
-
-        .action-btn.again {
-            background: #2a5298;
-            color: white;
-        }
-
-        .action-btn.again:active {
-            background: #1e3c72;
-        }
-
-        .action-btn.thermer {
-            background: #22c55e;
-            color: white;
-        }
-
-        .action-btn.thermer:active {
-            background: #16a34a;
+        .filter-summary.empty {
+            color: #64748b;
+            font-style: italic;
         }
 
         @media (max-width: 600px) {
@@ -410,14 +354,26 @@
                 ⏳ Buscando criatura aleatória...
             </div>
 
-            <div id="activeFilters" style="margin-top: 15px; font-size: 14px; color: #666;"></div>
+            <div id="activeFilters" class="filter-summary empty">Nenhum filtro ativo</div>
 
-            <button class="generate-btn" id="generateBtn" disabled data-i18n="generateBtn">
-                Gerar Criatura
-            </button>
+            <div class="primary-actions">
+                <button class="generate-btn" id="generateBtn" disabled data-i18n="generateBtn">
+                    Gerar Criatura
+                </button>
+                <button class="generate-btn secondary" id="generateAndPrintBtn" style="display: none;" data-i18n="generateAndPrintBtn">
+                    Gerar e Imprimir
+                </button>
+            </div>
+
             <button class="action-btn again" id="repeatBtn" style="display: none; margin-top: 10px;">
                 Repetir Última Busca
             </button>
+
+            <div class="primary-actions">
+                <button class="generate-btn secondary" id="generateAndPrintBtn" disabled>
+                    Gerar e Imprimir
+                </button>
+            </div>
         </div>
 
         <div class="surprise-section" id="surpriseSection">
@@ -515,6 +471,7 @@
                 imageOnly: "🖼️ Somente Imagem (Scryfall)",
                 loading: "⏳ Buscando criatura aleatória...",
                 generateBtn: "Gerar Criatura",
+                generateAndPrintBtn: "Gerar e Imprimir",
                 surpriseTitle: "🎁 Criatura sorteada!",
                 surpriseDescription: "A criatura está pronta. Clique em \"Imprimir Surpresa\" para revelar ao grupo!",
                 printSurpriseBtn: "🖨️ Imprimir Surpresa",
@@ -816,15 +773,32 @@
                 parts.push('excluindo Universes Beyond');
             }
 
-            summaryEl.textContent = parts.length > 0 ? `Filtros ativos: ${parts.join(' • ')}` : '';
+            if (parts.length === 0) {
+                summaryEl.textContent = 'Nenhum filtro ativo';
+                summaryEl.classList.add('empty');
+                return;
+            }
+
+            summaryEl.textContent = `Filtros ativos: ${parts.join(' • ')}`;
+            summaryEl.classList.remove('empty');
         }
 
         function saveFilterState() {
+            excludeUnsets = document.getElementById('excludeUnsets').checked;
+            excludeUniversesBeyond = document.getElementById('excludeUniversesBeyond').checked;
+
+            const includeImage = document.getElementById('includeImageCheckbox')?.checked ?? false;
+            const imageOnly = document.getElementById('imageOnlyCheckbox')?.checked ?? false;
+            const printQuantity = Number(document.getElementById('printQuantity')?.value || 1);
+
             const state = {
                 selectedSets,
                 excludeUnsets,
                 excludeUniversesBeyond,
                 selectedCMC,
+                includeImage,
+                imageOnly,
+                printQuantity,
             };
             localStorage.setItem('momirFilterState', JSON.stringify(state));
             updateActiveFiltersSummary();
@@ -834,17 +808,43 @@
             const savedState = localStorage.getItem('momirFilterState');
             if (savedState) {
                 const state = JSON.parse(savedState);
-                selectedSets = state.selectedSets || [];
-                excludeUnsets = state.excludeUnsets || false;
-                excludeUniversesBeyond = state.excludeUniversesBeyond || false;
-                selectedCMC = state.selectedCMC;
+                selectedSets = Array.isArray(state.selectedSets) ? state.selectedSets : [];
+                excludeUnsets = Boolean(state.excludeUnsets);
+                excludeUniversesBeyond = Boolean(state.excludeUniversesBeyond);
+                selectedCMC = Number.isFinite(state.selectedCMC) ? state.selectedCMC : null;
+
+                const includeDesktop = document.getElementById('includeImageCheckbox');
+                const includeMobile = document.getElementById('includeImageCheckboxMobile');
+                const imageOnlyDesktop = document.getElementById('imageOnlyCheckbox');
+                const imageOnlyMobile = document.getElementById('imageOnlyCheckboxMobile');
+                const printQuantityInput = document.getElementById('printQuantity');
+
+                if (includeDesktop) includeDesktop.checked = Boolean(state.includeImage);
+                if (includeMobile) includeMobile.checked = includeDesktop.checked;
+                if (imageOnlyDesktop) imageOnlyDesktop.checked = Boolean(state.imageOnly);
+                if (imageOnlyMobile) imageOnlyMobile.checked = imageOnlyDesktop.checked;
+                if (printQuantityInput) {
+                    const savedQuantity = Number(state.printQuantity) || 1;
+                    printQuantityInput.value = Math.min(Math.max(savedQuantity, 1), 10);
+                }
 
                 document.getElementById('excludeUnsets').checked = excludeUnsets;
                 document.getElementById('excludeUniversesBeyond').checked = excludeUniversesBeyond;
-                if (selectedCMC !== null) {
+
+                if (selectedCMC !== null && Number.isFinite(selectedCMC)) {
                     selectCMC(selectedCMC);
                 }
             }
+        }
+
+        function repeatLastSearch() {
+            const cmcToUse = lastUsedCMC ?? selectedCMC;
+            if (cmcToUse === null || cmcToUse === undefined) {
+                return;
+            }
+
+            selectedCMC = cmcToUse;
+            generateCreature();
         }
 
         // Initialize CMC buttons
@@ -867,6 +867,10 @@
             });
             document.querySelector(`[data-cmc="${cmc}"]`).classList.add('active');
             document.getElementById('generateBtn').disabled = false;
+            const generateAndPrintBtn = document.getElementById('generateAndPrintBtn');
+            if (generateAndPrintBtn) {
+                generateAndPrintBtn.style.display = 'block';
+            }
             saveFilterState();
         }
 
@@ -912,12 +916,27 @@
                 } else {
                     displayCreature(creature);
                 }
+
+                return creature;
             } catch (err) {
                 errorEl.textContent = err.message;
                 errorEl.classList.add('active');
+                return null;
             } finally {
                 loadingEl.classList.remove('active');
             }
+        }
+
+        async function generateAndPrintCreature() {
+            const creature = await generateCreature();
+            if (!creature) return;
+
+            if (document.getElementById('surpriseModeCheckbox').checked) {
+                printSurprise();
+                return;
+            }
+
+            printWithThermer();
         }
 
         function displayCreature(creature) {
@@ -1026,16 +1045,19 @@
             const imageOnlyMobile = document.getElementById('imageOnlyCheckboxMobile');
 
             function syncFromDesktopToMobile() {
-                includeMobile.checked = includeDesktop.checked;
-                imageOnlyMobile.checked = imageOnlyDesktop.checked;
+                if (includeMobile) includeMobile.checked = includeDesktop.checked;
+                if (imageOnlyMobile) imageOnlyMobile.checked = imageOnlyDesktop.checked;
+                saveFilterState();
             }
 
             function syncFromMobileToDesktop() {
-                includeDesktop.checked = includeMobile.checked;
-                imageOnlyDesktop.checked = imageOnlyMobile.checked;
+                if (includeDesktop) includeDesktop.checked = includeMobile.checked;
+                if (imageOnlyDesktop) imageOnlyDesktop.checked = imageOnlyMobile.checked;
+                saveFilterState();
             }
 
             function closeDrawer() {
+                if (!filterMenu || !filterOverlay) return;
                 filterMenu.classList.remove('open');
                 filterOverlay.classList.remove('open');
                 filterToggle && filterToggle.setAttribute('aria-expanded', 'false');
@@ -1043,6 +1065,7 @@
             }
 
             function openDrawer() {
+                if (!filterMenu || !filterOverlay) return;
                 filterMenu.classList.add('open');
                 filterOverlay.classList.add('open');
                 filterToggle && filterToggle.setAttribute('aria-expanded', 'true');
@@ -1056,19 +1079,29 @@
                 });
             }
 
-            includeDesktop.addEventListener('change', syncFromDesktopToMobile);
-            imageOnlyDesktop.addEventListener('change', syncFromDesktopToMobile);
-            includeMobile.addEventListener('change', syncFromMobileToDesktop);
-            imageOnlyMobile.addEventListener('change', syncFromMobileToDesktop);
+            if (includeDesktop) includeDesktop.addEventListener('change', syncFromDesktopToMobile);
+            if (imageOnlyDesktop) imageOnlyDesktop.addEventListener('change', syncFromDesktopToMobile);
+            if (includeMobile) includeMobile.addEventListener('change', syncFromMobileToDesktop);
+            if (imageOnlyMobile) imageOnlyMobile.addEventListener('change', syncFromMobileToDesktop);
 
-            filterOverlay && filterOverlay.addEventListener('click', closeDrawer);
+            if (filterOverlay) filterOverlay.addEventListener('click', closeDrawer);
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') closeDrawer();
             });
         }
 
+        function bindAdditionalMomirActions() {
+            document.getElementById('printQuantity')?.addEventListener('change', saveFilterState);
+            document.getElementById('repeatBtn')?.addEventListener('click', repeatLastSearch);
+            document.getElementById('printBtn')?.addEventListener('click', printWithThermer);
+            document.getElementById('printSurpriseBtn')?.addEventListener('click', printSurprise);
+            document.getElementById('revealBtn')?.addEventListener('click', revealSurprise);
+            document.getElementById('generateAndPrintBtn')?.addEventListener('click', generateAndPrintCreature);
+        }
+
         // Event listeners
         document.getElementById('generateBtn').addEventListener('click', generateCreature);
+        document.getElementById('generateAndPrintBtn').addEventListener('click', generateAndPrintCreature);
         document.getElementById('againBtn').addEventListener('click', generateCreature);
         document.getElementById('momirFilterToggle').addEventListener('click', () => {
             const menu = document.getElementById('momirFilterMenu');
@@ -1093,6 +1126,8 @@
         loadFilterState();
         initCMCButtons();
         populateMomirSetSelect();
+        setupMobileFilterMenu();
+        bindAdditionalMomirActions();
     </script>
 </body>
 </html>

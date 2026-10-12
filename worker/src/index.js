@@ -554,11 +554,16 @@ function normalizeSetList(setValue) {
 }
 
 function buildMomirQuery(cmcValue, options = {}) {
-  const setCodes = normalizeSetList(options.sets || options.setCodes || options.setsList);
+  const MAX_SET_CODES_PER_QUERY = 40;
+  let setCodes = normalizeSetList(options.sets || options.setCodes || options.setsList);
   const excludeUnsets = Boolean(options.exclude_unsets || options.excludeUnsets);
   const excludeUniversesBeyond = Boolean(
     options.exclude_universes_beyond || options.excludeUniversesBeyond
   );
+
+  if (setCodes.length > MAX_SET_CODES_PER_QUERY) {
+    setCodes = [];
+  }
 
   const clauses = [`type:creature`, `cmc:${cmcValue}`];
 
