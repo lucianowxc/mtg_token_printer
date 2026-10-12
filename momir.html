@@ -646,6 +646,7 @@
                     if (checkbox.checked) current.add(code);
                     else current.delete(code);
                     selectedSets = [...current];
+                    saveFilterState();
                 });
 
                 const label = document.createElement('span');
@@ -690,11 +691,13 @@
         function selectAllMomirSets() {
             selectedSets = [...allMomirSetCodes];
             renderMomirSetSelectionList(momirSetCatalog);
+            saveFilterState();
         }
 
         function clearAllMomirSets() {
             selectedSets = [];
             renderMomirSetSelectionList(momirSetCatalog);
+            saveFilterState();
         }
 
         function syncMomirSetSelectionFilter() {
@@ -772,6 +775,8 @@
             if (clearBtn) {
                 clearBtn.addEventListener('click', clearAllMomirSets);
             }
+            document.getElementById('excludeUnsets').addEventListener('change', saveFilterState);
+            document.getElementById('excludeUniversesBeyond').addEventListener('change', saveFilterState);
         }
 
         function getFilterSelections() {
@@ -786,6 +791,33 @@
             ensureSelectedSetsCurrent();
             excludeUnsets = document.getElementById('excludeUnsets').checked;
             excludeUniversesBeyond = document.getElementById('excludeUniversesBeyond').checked;
+        }
+
+        function saveFilterState() {
+            const state = {
+                selectedSets,
+                excludeUnsets,
+                excludeUniversesBeyond,
+                selectedCMC,
+            };
+            localStorage.setItem('momirFilterState', JSON.stringify(state));
+        }
+
+        function loadFilterState() {
+            const savedState = localStorage.getItem('momirFilterState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                selectedSets = state.selectedSets || [];
+                excludeUnsets = state.excludeUnsets || false;
+                excludeUniversesBeyond = state.excludeUniversesBeyond || false;
+                selectedCMC = state.selectedCMC;
+
+                document.getElementById('excludeUnsets').checked = excludeUnsets;
+                document.getElementById('excludeUniversesBeyond').checked = excludeUniversesBeyond;
+                if (selectedCMC !== null) {
+                    selectCMC(selectedCMC);
+                }
+            }
         }
 
         // Initialize CMC buttons
@@ -808,6 +840,7 @@
             });
             document.querySelector(`[data-cmc="${cmc}"]`).classList.add('active');
             document.getElementById('generateBtn').disabled = false;
+            saveFilterState();
         }
 
         async function generateCreature() {
@@ -1022,6 +1055,7 @@
         initCMCButtons();
         populateMomirSetSelect();
         setupMobileFilterMenu();
+        loadFilterState();
    </script>
 </body>
 </html>
