@@ -361,6 +361,9 @@
 <body>
     <div class="container">
         <div class="header">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                <button class="hamburger-button" id="momirFilterToggle" aria-expanded="false" aria-controls="momirFilterMenu" aria-label="Abrir filtros">☰</button>
+            </div>
             <h1>⚡ Momir Vig</h1>
             <p data-i18n="subtitle">Random Creature Generator</p>
             <div class="lang-switch">
@@ -388,12 +391,12 @@
                 <label for="surpriseModeCheckbox" data-i18n="surpriseMode">🎁 Modo Surpresa (não revelar antes de imprimir)</label>
             </div>
 
-            <div class="image-option">
+            <div class="image-option mobile-hide-when-drawer">
                 <input type="checkbox" id="includeImageCheckbox">
                 <label for="includeImageCheckbox" data-i18n="includeImage">🖼️ Incluir Imagem na Impressão</label>
             </div>
 
-            <div class="image-option">
+            <div class="image-option mobile-hide-when-drawer">
                 <input type="checkbox" id="imageOnlyCheckbox">
                 <label for="imageOnlyCheckbox" data-i18n="imageOnly">🖼️ Somente Imagem (Scryfall)</label>
             </div>
@@ -417,7 +420,7 @@
             </div>
         </div>
 
-        <div class="creature-section" id="creatureSection">
+    <div class="creature-section" id="creatureSection">
             <img class="card-preview-image" id="creatureImage" src="" alt="Creature art">
 
             <div class="creature-name" id="creatureName"></div>
@@ -439,7 +442,7 @@
 
             <div id="creatureTextContainer"></div>
 
-            <div class="action-buttons">
+            <div class="action-buttons mobile-hide-when-drawer">
                 <button class="action-btn thermer" id="printBtn" data-i18n="printBtn">🖨️ Imprimir</button>
                 <a class="action-btn scryfall" id="scryfallLink" target="_blank" data-i18n="viewScryfall">Ver no Scryfall</a>
                 <button class="action-btn again" id="againBtn" data-i18n="generateAnother">Gerar Outra</button>
@@ -449,8 +452,10 @@
         <div class="footer" data-shared-footer="true" data-product-icon="⚡" data-product-name="Momir Vig"></div>
     </div>
 
-    <div class="filter-menu" id="momirFilterMenu">
-        <div class="filter-panel" id="momirFilterPanel" aria-hidden="true">
+    <div class="drawer-overlay" id="momirFilterOverlay"></div>
+    <div class="filter-menu" id="momirFilterMenu" aria-hidden="true">
+        <div class="filter-panel" id="momirFilterPanel">
+            <div class="drawer-panel-title">⚙️ Opções Momir</div>
             <div class="filter-row">
                 <label for="includeImageCheckboxMobile" data-i18n="includeImage">🖼️ Incluir Imagem na Impressão</label>
                 <input type="checkbox" id="includeImageCheckboxMobile">
@@ -468,7 +473,6 @@
                 <button class="action-btn scryfall" id="revealBtnMobile" data-i18n="revealBtn">👁️ Revelar</button>
             </div>
         </div>
-        <button class="hamburger-button" id="momirFilterToggle" aria-expanded="false" aria-controls="momirFilterPanel">☰</button>
     </div>
 
     <script src="shared-layout.js"></script>
@@ -697,6 +701,8 @@
         function setupMobileFilterMenu() {
             const filterToggle = document.getElementById('momirFilterToggle');
             const filterPanel = document.getElementById('momirFilterPanel');
+            const filterMenu = document.getElementById('momirFilterMenu');
+            const filterOverlay = document.getElementById('momirFilterOverlay');
 
             const includeDesktop = document.getElementById('includeImageCheckbox');
             const imageOnlyDesktop = document.getElementById('imageOnlyCheckbox');
@@ -721,12 +727,28 @@
             syncFromDesktopToMobile();
             syncSurpriseMobileActions();
 
+            function closeDrawer() {
+                filterMenu.classList.remove('open');
+                filterOverlay.classList.remove('open');
+                filterToggle && filterToggle.setAttribute('aria-expanded', 'false');
+                filterMenu.setAttribute('aria-hidden', 'true');
+            }
+
+            function openDrawer() {
+                filterMenu.classList.add('open');
+                filterOverlay.classList.add('open');
+                filterToggle && filterToggle.setAttribute('aria-expanded', 'true');
+                filterMenu.setAttribute('aria-hidden', 'false');
+            }
+
             if (filterToggle) {
                 filterToggle.addEventListener('click', () => {
                     const expanded = filterToggle.getAttribute('aria-expanded') === 'true';
-                    filterToggle.setAttribute('aria-expanded', String(!expanded));
-                    filterPanel.classList.toggle('active');
-                    filterPanel.setAttribute('aria-hidden', String(expanded));
+                    if (expanded) {
+                        closeDrawer();
+                    } else {
+                        openDrawer();
+                    }
                     syncSurpriseMobileActions();
                 });
             }
@@ -739,19 +761,22 @@
             printBtnMobile.addEventListener('click', () => {
                 syncFromMobileToDesktop();
                 printWithThermer();
+                closeDrawer();
             });
             generateBtnMobile.addEventListener('click', generateCreature);
             printSurpriseBtnMobile.addEventListener('click', () => {
                 syncFromMobileToDesktop();
                 printSurprise();
+                closeDrawer();
             });
-            revealBtnMobile.addEventListener('click', revealSurprise);
+            revealBtnMobile.addEventListener('click', () => {
+                revealSurprise();
+                closeDrawer();
+            });
 
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.filter-menu') && filterPanel.classList.contains('active')) {
-                    filterPanel.classList.remove('active');
-                    filterToggle && filterToggle.setAttribute('aria-expanded', 'false');
-                }
+            filterOverlay && filterOverlay.addEventListener('click', closeDrawer);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeDrawer();
             });
         }
 

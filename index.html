@@ -445,6 +445,9 @@
 <body>
     <div class="container">
         <div class="header">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                <button class="hamburger-button" id="filterToggle" aria-expanded="false" aria-controls="filterMenu" aria-label="Abrir filtros">☰</button>
+            </div>
             <h1>🃏 MTG Token Printer</h1>
             <p id="subtitleText" data-i18n="subtitle">Imprima tokens via Thermer (iOS & Android)</p>
             <div style="margin-top: 15px; font-size: 14px;">
@@ -510,18 +513,18 @@
 
             <div class="divider"></div>
 
-            <div class="image-option">
+            <div class="image-option mobile-hide-when-drawer">
                 <input type="checkbox" id="includeImageCheckbox">
                 <label for="includeImageCheckbox" data-i18n="includeImage">🖼️ Incluir Imagem na Impressão</label>
             </div>
 
-            <div class="image-option">
+            <div class="image-option mobile-hide-when-drawer">
                 <input type="checkbox" id="imageOnlyCheckbox">
                 <label for="imageOnlyCheckbox" data-i18n="imageOnly">🖼️ Somente Imagem (Scryfall)</label>
             </div>
 
             <!-- Inline print actions (kept for larger viewports) -->
-            <div class="print-button-group desktop-print-actions" style="display:flex;">
+            <div class="print-button-group desktop-print-actions mobile-hide-when-drawer" style="display:flex;">
                 <a
                     href="#"
                     class="print-button thermer"
@@ -560,9 +563,10 @@
         <div class="footer" data-shared-footer="true" data-product-icon="🎴" data-product-name="MTG Token Printer"></div>
     </div>
 
-    <!-- Floating hamburger filter menu (mobile friendly) -->
-    <div class="filter-menu" id="filterMenu">
-        <div class="filter-panel" id="filterPanel" aria-hidden="true">
+    <div class="drawer-overlay" id="filterOverlay"></div>
+    <div class="filter-menu" id="filterMenu" aria-hidden="true">
+        <div class="filter-panel" id="filterPanel">
+            <div class="drawer-panel-title">⚙️ Opções de impressão</div>
             <div class="filter-row">
                 <label for="includeImageCheckbox" data-i18n="includeImage">🖼️ Incluir Imagem na Impressão</label>
                 <input type="checkbox" id="includeImageCheckboxMobile">
@@ -576,7 +580,6 @@
                 <button class="print-button clear" id="clear-button-mobile">✕ <span data-i18n="clearBtn">Limpar</span></button>
             </div>
         </div>
-        <button class="hamburger-button" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">☰</button>
     </div>
 
     <script src="shared-layout.js"></script>
@@ -1059,6 +1062,7 @@
             const filterToggle = document.getElementById('filterToggle');
             const filterPanel = document.getElementById('filterPanel');
             const filterMenu = document.getElementById('filterMenu');
+            const filterOverlay = document.getElementById('filterOverlay');
             const includeDesktop = document.getElementById('includeImageCheckbox');
             const imageOnlyDesktop = document.getElementById('imageOnlyCheckbox');
             const includeMobile = document.getElementById('includeImageCheckboxMobile');
@@ -1080,11 +1084,27 @@
             syncFromDesktopToMobile();
 
             // Toggle panel
+            function closeDrawer() {
+                filterMenu.classList.remove('open');
+                filterOverlay.classList.remove('open');
+                filterToggle && filterToggle.setAttribute('aria-expanded', 'false');
+                filterMenu.setAttribute('aria-hidden', 'true');
+            }
+
+            function openDrawer() {
+                filterMenu.classList.add('open');
+                filterOverlay.classList.add('open');
+                filterToggle && filterToggle.setAttribute('aria-expanded', 'true');
+                filterMenu.setAttribute('aria-hidden', 'false');
+            }
+
             filterToggle && filterToggle.addEventListener('click', () => {
                 const expanded = filterToggle.getAttribute('aria-expanded') === 'true';
-                filterToggle.setAttribute('aria-expanded', String(!expanded));
-                filterPanel.classList.toggle('active');
-                filterPanel.setAttribute('aria-hidden', String(expanded));
+                if (expanded) {
+                    closeDrawer();
+                } else {
+                    openDrawer();
+                }
             });
 
             // Sync changes both ways
@@ -1104,14 +1124,12 @@
             clearMobile && clearMobile.addEventListener('click', (e) => {
                 e.preventDefault();
                 clearPreview();
+                closeDrawer();
             });
 
-            // Close filter panel when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.filter-menu') && filterPanel.classList.contains('active')) {
-                    filterPanel.classList.remove('active');
-                    filterToggle && filterToggle.setAttribute('aria-expanded', 'false');
-                }
+            filterOverlay && filterOverlay.addEventListener('click', closeDrawer);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeDrawer();
             });
         });
     </script>
